@@ -38,10 +38,16 @@ jobs:
           with open(os.environ['GITHUB_ENV'], 'a') as f: f.write('SIMULATOR_ID=' + iphones[0]['udid'] + '\n')
           PY
       - name: Run XCTest
-        run: xcodebuild test -project Deulgo.xcodeproj -scheme Deulgo -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -resultBundlePath build/Tests.xcresult CODE_SIGNING_ALLOWED=NO
+        run: xcodebuild -quiet test -project Deulgo.xcodeproj -scheme Deulgo -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -derivedDataPath build/simulator -resultBundlePath build/Tests.xcresult CODE_SIGNING_ALLOWED=NO
+      - name: Launch app and capture iPhone screen
+        run: |
+          xcrun simctl install "$SIMULATOR_ID" build/simulator/Build/Products/Debug-iphonesimulator/Deulgo.app
+          xcrun simctl launch --terminate-running-process "$SIMULATOR_ID" com.deulgo.delivery
+          sleep 3
+          xcrun simctl io "$SIMULATOR_ID" screenshot build/Deulgo-iPhone.png
       - name: Build unsigned iPhone application
         run: |
-          xcodebuild build -project Deulgo.xcodeproj -scheme Deulgo -configuration Release -destination 'generic/platform=iOS' -derivedDataPath build/device CODE_SIGNING_ALLOWED=NO
+          xcodebuild -quiet build -project Deulgo.xcodeproj -scheme Deulgo -configuration Release -destination 'generic/platform=iOS' -derivedDataPath build/device CODE_SIGNING_ALLOWED=NO
           mkdir -p build/package/Payload
           cp -R build/device/Build/Products/Release-iphoneos/Deulgo.app build/package/Payload/
           cd build/package
@@ -50,6 +56,11 @@ jobs:
         with:
           name: Deulgo-iPhone-unsigned
           path: build/Deulgo-unsigned.ipa
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Deulgo-iPhone-screen
+          path: build/Deulgo-iPhone.png
           retention-days: 7
       - uses: actions/upload-artifact@v4
         if: always()
