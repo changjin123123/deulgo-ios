@@ -84,7 +84,7 @@ struct PlaceSearchView: View {
                 if model.isSearching { ProgressView("위치를 찾고 있어요") }
                 if let message = model.message { Text(message).foregroundStyle(.secondary) }
                 if let selected, let destination = selected.destination {
-                    Section("선택한 위치") {
+                    Section {
                         Map(initialPosition: .region(MKCoordinateRegion(center: selected.coordinate,
                             span: MKCoordinateSpan(latitudeDelta: 0.006, longitudeDelta: 0.006)))) {
                             Marker(selected.name, coordinate: selected.coordinate)
@@ -94,7 +94,7 @@ struct PlaceSearchView: View {
                         Text(selected.address).font(.subheadline).foregroundStyle(.secondary)
                         Button("이 위치를 \(stop.title)로 선택") { onSelect(destination); dismiss() }
                             .buttonStyle(.borderedProminent)
-                    } footer: { Text("같은 이름의 장소가 있을 수 있어요. 주소와 지도 위치를 확인해주세요.") }
+                    } header: { Text("선택한 위치") } footer: { Text("같은 이름의 장소가 있을 수 있어요. 주소와 지도 위치를 확인해주세요.") }
                 }
                 Section("검색 결과") {
                     ForEach(model.results) { result in
