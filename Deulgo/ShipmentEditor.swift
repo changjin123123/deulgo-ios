@@ -66,10 +66,6 @@ struct ShipmentEditor: View {
     }
 
     @ViewBuilder private var itemSections: some View {
-        Section {
-            TextField("예: 접이식 테이블", text: $draft.item).accessibilityLabel("물품 이름")
-            Stepper("수량 \(draft.count)개", value: $draft.count, in: 1...10)
-        } header: { Text("무엇을 보내나요?") }
         Section("중고거래 링크 · 선택") {
             TextField("당근·번개장터·중고나라 링크", text: $draft.link, axis: .vertical)
                 .lineLimit(1...2).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -102,6 +98,10 @@ struct ShipmentEditor: View {
                 Button("붙여넣은 내용 확인") { importer.usePasted(pasted) }.disabled(pasted.isEmpty)
             }
         }
+        Section {
+            TextField("예: 접이식 테이블", text: $draft.item).accessibilityLabel("물품 이름")
+            Stepper("수량 \(draft.count)개", value: $draft.count, in: 1...10)
+        } header: { Text("무엇을 보내나요?") }
         Section("포장과 크기") {
             Picker("포장 상태", selection: $draft.packaging) {
                 ForEach(["포장할 예정이에요", "포장했어요", "그대로 운반해요", "분해했어요"], id: \.self) { Text($0) }
