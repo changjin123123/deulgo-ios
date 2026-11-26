@@ -4,7 +4,7 @@ final result: passed
 
 ## Findings
 
-No actionable P0/P1/P2 findings remain for the inspected sending form and home entry on iPhone 17 Pro in light appearance. This passes native screen/interaction QA, not public-server readiness, device installation or every accessibility configuration. IPA packaging is still awaiting owner approval.
+No actionable P0/P1/P2 findings remain for the inspected sending form and home entry on iPhone 17 Pro in light appearance. This passes native screen/interaction QA, not public-server readiness, device installation or every accessibility configuration. IPA packaging succeeded after owner approval at 03:11 KST on 2026-11-27; the downloaded 0.1.3 (4) file passed version, arm64, native-key-presence and integrity checks.
 
 - Resolved P1: downward swipe did not dismiss the keyboard in run #7 attempt 2. The original failure recording also showed the keyboard still visible after the swipe. Immediate scroll dismissal is now verified by the passing run #9 test and `Send-form-scroll-dismissed.png`.
 - Resolved P2: faint input boundaries/prompts and small helper text. System-gray borders, explicit 60%-primary prompts/helpers and 15-point helpers were recaptured in runs #8 and #9. Combined full and focused comparisons show legible fields and reference-aligned hierarchy.
@@ -52,7 +52,7 @@ No actionable P0/P1/P2 findings remain for the inspected sending form and home e
 - [x] Compare full and focused native form captures with the selected design.
 - [x] Verify corrected contrast, keyboard controls, scroll dismissal and Next/address flow.
 - [x] Verify dedicated long-distance home entry and truthful public-request state.
-- [ ] Obtain owner approval for key-using package job, then verify the generated IPA before delivery.
+- [x] Obtain owner approval for key-using package job and verify the generated IPA before delivery.
 
 ## Remaining coverage gaps
 
