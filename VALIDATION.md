@@ -1,6 +1,17 @@
 # 들고 iPhone 통합 구현 검증 · 2026-11-27
 
-## 0.1.3 (4) 검사와 수정 — 새 IPA 미생성
+## 현재 — 0.1.3 (4) 검사 성공, IPA 승인 대기
+
+- [실행 #9](https://github.com/changjin123123/deulgo-ios/actions/runs/45871380046), 검사 소스 `21a733219b5d2f409476ddde398422c740786ddc`.
+- `verify` 작업은 2026-11-27 03:04 KST에 성공했다. 구조 89개 객체·참조 검사, JavaScript 규칙 6개, XCTest 30개가 통과했다. XCTest 실패·건너뜀은 0개이며 내려받은 요약 JSON과 xcresult SQLite에서도 확인했다.
+- Xcode 26.6 (17F113), macOS 26.7.2, iPhone 17 Pro / iOS 26.4.1 / arm64.
+- 보내기 UI 검사는 키보드 열린 동안 Next 숨김, 닫기 버튼, 원래 Next 위치 복원, 안내 탭 닫기·입력값 보존, 아래로 쓸어 닫기, 주소 단계 이동을 모두 통과했다. 홈의 공개 요청 둘러보기 직접 진입도 통과했다.
+- 별도 앱 실행·홈 캡처 성공. 보내기 전체·입력 영역을 시안과 함께 비교했고, 키보드 열린 상태·닫힌 상태·스크롤 후 상태와 홈 화면도 확인했다. `design-qa.md`의 현재 결과는 passed다. 작은 화면·큰 글자·다크 모드·VoiceOver와 실기기는 이 결과에 포함되지 않는다.
+- 결과 ZIP SHA-256 `b9cfb000a1ce360c1daaa4886058acab97d9d7b87136a65b1154f1e8c345a5a5`, 화면 ZIP SHA-256 `fb1be29d4bdd6737e531e5de3128a4f7e24b77bd98739847ee394d83aefda1bc`를 대조했다.
+- Xcode 로그에 XCTest 지원 프레임워크 복사 관련 `exit code 0 but produced no further output` 진단 2개와 디버거 버전 경고가 있었다. 최종 컴파일·실행·검사 단계는 성공했고 실패한 검사 항목은 없다. 경고가 전혀 없었다고 주장하지 않는다.
+- `package`는 `verify` 성공 후 동일 커밋으로 소유자 승인을 기다린다. 카카오 키 주입·기기용 Release 빌드·0.1.3 IPA 생성은 아직 실행 전이다.
+
+## 이전 시도 — 실행 #7
 
 - 실행 #7 첫 시도는 Mac 실행 환경 확보 실패·GitHub 내부 서버 오류로 단계 실행 없이 종료됐다.
 - 동일 커밋 `5fa9c0f42268504f603a208ac58849ac8efc459a`의 두 번째 시도는 Mac 배정, 구조 검사, JavaScript 규칙 6개, Swift 컴파일을 통과했다.

@@ -1,64 +1,59 @@
 # iPhone 0.1.3 UI verification
 
-final result: blocked
+final result: passed
 
 ## Findings
 
-- [P1] A downward scroll did not fully dismiss the keyboard. Evidence: run #7 attempt 2, `ShipmentUITests.testSendKeyboardDismissalAndBottomAction`, activity `Swipe down "shipment.itemScroll" ScrollView` followed by the keyboard absence expectation timeout. The toolbar close, helper tap and bottom-action restoration assertions before this point passed. Fix: replace interactive dismissal with immediate dismissal when scrolling begins. Status: source fixed, runtime recheck pending.
-- [P2] The inactive input outline, underline and example text were much fainter than the selected design. Helper text was also smaller. Evidence: `send-comparison.png`, source/implementation viewed together. Fix: system-gray borders, explicit dynamic primary color at 60% opacity for prompts/helpers, and 15-point helper text. Status: source fixed, recapture pending.
+No actionable P0/P1/P2 findings remain for the inspected sending form and home entry on iPhone 17 Pro in light appearance. This passes native screen/interaction QA, not public-server readiness, device installation or every accessibility configuration. IPA packaging is still awaiting owner approval.
+
+- Resolved P1: downward swipe did not dismiss the keyboard in run #7 attempt 2. The original failure recording also showed the keyboard still visible after the swipe. Immediate scroll dismissal is now verified by the passing run #9 test and `Send-form-scroll-dismissed.png`.
+- Resolved P2: faint input boundaries/prompts and small helper text. System-gray borders, explicit 60%-primary prompts/helpers and 15-point helpers were recaptured in runs #8 and #9. Combined full and focused comparisons show legible fields and reference-aligned hierarchy.
+- Run #8 separately failed the toolbar-close expectation although its recording showed the keyboard closed and Next restored. A single accessibility query took about 4.3 seconds of a 5-second budget. The test now performs fresh queries with a 15-second limit; the keyboard-absence assertion and all other conditions remain intact. Run #9 passed them all. Timing/query behavior was the suspected test issue; the successful rerun does not establish a wider platform diagnosis.
 
 ## Comparison evidence
 
-- Source: `../generated_images/exec-dcdf9037-8d62-4ed7-8d8f-9e15f37e60c1.png`, private selected option 2 with `무엇을 보낼까요?`. Image bytes are not committed publicly.
-- Implementation: `../deulgo-0.1.3/attempt2-tests/screens/Send-form-keyboard-closed.png` from the native test result for commit `5fa9c0f42268504f603a208ac58849ac8efc459a`.
-- Full-view combined comparison: `../deulgo-0.1.3/attempt2-tests/screens/send-comparison.png`.
-- Other inspected native captures: `Send-form-keyboard-open.png` and `Home-long-distance-entry.png` in the same folder.
-- Source: 887 × 1774 px, no system status bar. Native: 1206 × 2622 px, 402 × 874 points at 3× density. Both were normalized to 402 px wide without changing aspect ratio. The source was offset 53 px down to approximately align navigation content; this is not a pixel-perfect device match.
-- State: empty send form, light appearance, keyboard closed; separate native capture for keyboard open. Home capture shows the dedicated long-distance region and request entry above the fold.
-- Focused comparison: pending after fixes. Current report does not claim a passed visual review from the full-view image alone.
-- Browser-rendered evidence: not applicable to this native SwiftUI app. Evidence is from native simulator screenshots, not a website imitation.
+- Source visual: `../generated_images/exec-dcdf9037-8d62-4ed7-8d8f-9e15f37e60c1.png`, selected option 2 with `무엇을 보낼까요?`. Private reference bytes are not committed publicly.
+- Implementation source: `21a733219b5d2f409476ddde398422c740786ddc`, run #9.
+- Implementation screen: `../deulgo-0.1.3/run9-tests/screens/Send-form-keyboard-closed.png`.
+- Full-view combined comparison: `../deulgo-0.1.3/run9-tests/screens/send-comparison.png`.
+- Focused input-region comparison: `../deulgo-0.1.3/run9-tests/screens/send-focused.png`.
+- Interaction/home contact sheet: `../deulgo-0.1.3/run9-tests/screens/interaction-states.png`; originals are in the same folder.
+- Source: 887 × 1774 px, no status bar. Native: 1206 × 2622 px, 402 × 874 points at 3×, iPhone 17 Pro / iOS 26.4.1.
+- Both images were proportionally normalized to 402 px width. Full-view source offset is 53 px to approximately align navigation. Focused crops use source y=120–505 and native y=195–580. This is not a pixel-perfect viewport match; system bars and tab-root navigation differ.
+- Matching comparison state: empty send form, light appearance, keyboard closed. Additional native states: keyboard open, toolbar dismissed, scroll dismissed with `Test parcel` preserved, home and request preparation.
+- Browser-rendered evidence is not applicable to the requested native SwiftUI application. Actual native simulator screens were captured; no website imitation substitutes for the app.
 
-## Fidelity surfaces
+## Required fidelity surfaces
 
-- Typography: native system font and semantic heading hierarchy retained. Helper type was visibly smaller than the reference and is increased; recapture required.
-- Spacing/layout: plain white form, link-only box, external helpers, underlined item field, collapsed details and bottom action follow the selected arrangement. Native 24-point margins and platform navigation insets remain intentional. The tab-root screen has no mock back arrow because it is selected through the app tab.
-- Colors: existing green brand token retained. Inactive boundaries/prompts required the P2 correction above. Dark appearance remains untested.
-- Image/asset quality: this empty form uses text and system symbols, no decorative image assets. Existing native tab symbols and iOS 26 tab-bar material differ intentionally from the illustrative mock. They were not replaced with raster art.
-- Copy/content: `무엇을 보낼까요?` and both helper sentences match the selected copy. Retry/paste controls are absent in the normal empty state. Home shows `가는 김에 · 장거리 운반` and `운반 요청 둘러보기`; it clearly says the public connection is in preparation.
+- Fonts/typography: native system family, semibold link label, bold item heading and semantic 15-point helpers preserve the reference hierarchy. Prompts and helper sentences remain readable without clipping or unwanted wrapping. Native rendering/optical weight is an accepted platform difference.
+- Spacing/layout: plain white form, link-only box, external link helper, separate item helper, underlined item entry, collapsed optional details and bottom CTA match the selected composition. Native 24-point margins, platform navigation insets and no back arrow on the tab-root screen are intentional. Full/focused views show no hidden persistent controls or changed content density requiring a fix.
+- Colors/tokens: existing flat brand green is retained rather than the mock's illustrated texture. Dynamic primary helper colors and system-gray inactive boundaries resolve the earlier contrast issue. Green disclosure text follows the native interaction tint. Dark appearance remains untested.
+- Image/asset quality: the form has no decorative image assets. Existing system symbols, native tab icons and iOS 26 tab material are intentional platform elements; no raster mock was embedded in the app. Real listing thumbnails were outside this empty-state comparison.
+- Copy/content: exact `무엇을 보낼까요?`, both helper sentences and optional-link/detail labels are present. Retry/paste controls stay absent in the ordinary empty state. Home has `가는 김에 · 장거리 운반` and `운반 요청 둘러보기`, with truthful preparation status for the unconnected public service.
 
-## Interaction evidence
+## Interaction and runtime evidence
 
-- 28 unit tests and the home request-board UI test passed; send UI test failed at scroll dismissal.
-- Send test passed heading/normal-state checks, keyboard open without Next, no keyboard `입력 완료` button, toolbar close, Next restored to its original vertical position, helper tap to close, and typed-name preservation.
-- Final Next-to-address navigation was not reached because the earlier scroll check failed. It remains in the test for the next run.
-- Native logs contained no Swift compiler error. Xcode logged an LLDB version warning; this is separate from the recorded keyboard assertion failure. No browser console applies.
+- Run #9: 28 unit tests + 2 UI tests passed, failures 0, skipped 0; six JavaScript rule tests also passed.
+- Send test: keyboard opens, Next is absent while typing, no keyboard `입력 완료` button, toolbar close works, Next returns to its original y position (within 3 points), helper tap closes keyboard, typed name survives, downward swipe closes keyboard, Next reaches the address step.
+- Home test: direct board entry opens `공개 요청 목록 준비 중` without diverting through vehicle registration.
+- Native captures visibly confirm keyboard dismissal/Next restoration and home region layout. Separate simulator app launch/home capture also succeeded.
+- Xcode emitted support-framework copy diagnostics saying exit code 0 produced no output, and debugger-version warnings; final compilation, tests and capture succeeded. Browser console does not apply.
 
 ## Comparison history
 
-1. Before first CI: blocked because native evidence was missing.
-2. Run #7 attempt 1: runner acquisition failed; no app execution.
-3. Run #7 attempt 2: native evidence obtained and compared; P1 scroll behavior and P2 input contrast/helper size recorded.
-4. Source corrections applied. New screenshots and all 30 tests are still required before passing.
+1. Initial QA blocked: native rendered evidence missing.
+2. Run #7 attempt 1: hosted Mac runner acquisition failure, no app execution.
+3. Run #7 attempt 2: 29/30 tests; scroll failure and input-contrast P2 recorded from native evidence.
+4. Run #8: contrast recapture passed, but toolbar-close expectation timed out despite visible dismissal. Tests still 29/30. Overall QA remained blocked.
+5. Fresh-query/15-second expectation correction, retaining all assertions. Run #9: 30/30 tests, fresh full/focused comparison and keyboard/home captures inspected. P1/P2 resolved; result passed.
 
 ## Implementation checklist
 
-1. Run the corrected source through protected CI.
-2. Confirm all 30 tests including scroll dismissal and Next-to-address navigation pass.
-3. Compare the recaptured empty form against the source in a combined full view and focused input-region view.
-4. Inspect home and keyboard states; only then verify and deliver the new IPA.
+- [x] Compare full and focused native form captures with the selected design.
+- [x] Verify corrected contrast, keyboard controls, scroll dismissal and Next/address flow.
+- [x] Verify dedicated long-distance home entry and truthful public-request state.
+- [ ] Obtain owner approval for key-using package job, then verify the generated IPA before delivery.
 
 ## Remaining coverage gaps
 
-Small screens, Dynamic Type, dark mode, VoiceOver, real listing responses and external navigation handoff require separate device checks. Actual public requests remain unconnected and are not represented by fake entries.
-
-## Run #8 post-fix evidence
-
-- Native source commit: `483488cff18ba12f84bfbc8b54543999f3cd6b15`, iPhone 17 Pro / iOS 26.4.1.
-- Recapture: `../deulgo-0.1.3/run8-tests/screens/Send-form-keyboard-closed.png`.
-- Combined full view: `../deulgo-0.1.3/run8-tests/screens/send-comparison.png`.
-- Combined focused input region: `../deulgo-0.1.3/run8-tests/screens/send-focused.png`.
-- Same 887 × 1774 source and 1206 × 2622 native pixels, normalized to 402 pixels wide. Full-view source offset remains 53 pixels; focused crops use source y=120–505 and native y=195–580 to align the input regions. Empty form, light mode, keyboard closed.
-- P2 contrast/helper-size issue is resolved in the recapture. The field border, underline and example values are clearly visible; helpers follow the reference hierarchy. Native system fonts, 24-point margins, green disclosure label, flat existing brand green, platform tab bar and absence of a tab-root back arrow remain intentional. No text overflow, missing content or additional P0/P1/P2 visual drift was found in the combined full/focused comparison.
-- Run #8 failed earlier than the scroll check, at toolbar-close absence waiting. Video `../deulgo-0.1.3/run8-tests/failure.mp4` around 70 seconds onward visibly shows the keyboard closed and Next/tab bar restored. A single accessibility existence query took about 4.3 seconds of the 5-second expectation budget. The failure cannot be described as proof that the keyboard stayed visible.
-- Test polling now makes a fresh keyboard query and allows 15 seconds; it still requires no keyboard to exist. On failure it retains a screenshot and accessibility tree. The scroll and final navigation assertions remain unchanged and must pass.
-- Earlier P1 is unresolved until a successful runtime recheck covers scroll dismissal. No new app visuals were changed after these captures. Overall final result remains blocked pending interaction verification.
+Small screens, Dynamic Type, dark mode, VoiceOver, real listing responses, Sideloadly updates/data retention and external navigation handoff require separate checks. Actual public requests remain unconnected and are not represented by fake entries.
