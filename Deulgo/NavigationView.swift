@@ -42,7 +42,7 @@ struct DeliveryNavigationView: View {
                         }
                     }
                 }
-                Section("길 안내") {
+                Section {
                     Picker("이동할 곳", selection: Binding(get: { store.draft.selectedStop }, set: { store.select($0) })) {
                         ForEach(DeliveryStop.allCases) { Text($0.title).tag($0) }
                     }.pickerStyle(.segmented)
@@ -62,7 +62,7 @@ struct DeliveryNavigationView: View {
                         }
                         .disabled(store.draft.selectedDestination == nil || navigation.isOpening)
                     }
-                } footer: {
+                } header: { Text("길 안내") } footer: {
                     Text("선택한 앱에 장소 이름과 위치를 전달해요. 현재 위치와 경로는 내비 앱에서 확인해주세요. 차량 종류와 통행 제한도 내비 앱에서 확인할 수 있어요.")
                 }
                 if let message = store.storageMessage {
