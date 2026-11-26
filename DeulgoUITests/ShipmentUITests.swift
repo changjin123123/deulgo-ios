@@ -11,8 +11,20 @@ final class ShipmentUITests: XCTestCase {
     }
 
     @MainActor private func waitForKeyboardToClose(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
-        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)
-        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 5), .completed, file: file, line: line)
+        // Re-query after each accessibility snapshot. Hosted simulator snapshots
+        // can take several seconds even after the keyboard has visibly closed.
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            !app.keyboards.firstMatch.exists
+        }, object: nil)
+        let result = XCTWaiter.wait(for: [gone], timeout: 15)
+        if result != .completed {
+            capture("Keyboard-dismissal-timeout", app: app)
+            let tree = XCTAttachment(string: app.debugDescription)
+            tree.name = "Keyboard-dismissal-accessibility"
+            tree.lifetime = .keepAlways
+            add(tree)
+        }
+        XCTAssertEqual(result, .completed, file: file, line: line)
     }
 
     @MainActor func testSendKeyboardDismissalAndBottomAction() {

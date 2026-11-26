@@ -8,7 +8,7 @@
 
 ## 다음 확인판 · 0.1.3 (4)
 
-첫 실행은 Mac 배정 실패로 종료됐고, 재실행에서는 Swift 컴파일과 XCTest 29개가 성공했다. 아래로 쓸어 키보드를 닫는 UI 검사 1개가 실패해 수정했으며, 수정 후 재검사 전이다. 새 설치 파일은 아직 없다.
+실행 #8에서도 29개가 통과하고 키보드 닫힘 대기 검사 1개가 실패했다. 녹화에서는 키보드가 닫히고 하단 다음 버튼이 복원됐다. 5초 대기 중 접근성 조회가 약 4.3초 걸린 기록을 확인해, 매번 새 조회로 키보드 부재를 검사하고 대기 시간을 15초로 조정했다. 판정 조건은 유지하며 수정 후 재검사 전이다. 새 설치 파일은 아직 없다.
 
 - 보내기 첫 화면은 링크 입력칸만 테두리로 구분한다. 링크 자동 입력 안내는 테두리 밖에 두고, 직접 입력 안내는 `무엇을 보낼까요?` 아래에 배치한다.
 - 키보드는 상단 닫기 버튼, 입력칸 밖 안내·여백 누르기, 아래로 스크롤하기로 내릴 수 있게 구성했다. 키보드가 보일 때는 하단 다음 버튼과 탭을 숨기고 닫힌 뒤 원래 하단으로 복원한다.
@@ -109,7 +109,7 @@ xcodebuild test -project Deulgo.xcodeproj -scheme Deulgo \
   -destination 'platform=iOS Simulator,name=<설치된 iPhone 시뮬레이터 이름>'
 ```
 
-`.github/workflows/ios-check.yml`은 원본 저장소의 `main`에서 수동 실행한다. `ios-release` 환경의 본인 승인 후 XCTest 결과 개수 확인, 시뮬레이터 앱 실행·캡처, 기기용 Release 빌드와 unsigned IPA 생성을 진행한다. 2026-11-27 01:07 KST에 성공한 실행 #6의 기준판은 0.1.2 (3), 커밋 `15d43fca4ac0a3ed80f91707c8211f7728cbbc62`다. unsigned IPA는 서명/재서명 후 설치해야 하며 그대로 설치되는 파일은 아니다. GitHub Actions 산출물 보관 기간은 7일이다.
+`.github/workflows/ios-check.yml`은 원본 저장소의 `main`에서 수동 실행한다. 키 없이 구조·XCTest·시뮬레이터 화면을 먼저 검사하고, 성공한 동일 커밋의 기기용 Release 빌드와 unsigned IPA 생성은 `ios-release` 환경의 본인 승인 후 진행한다. 2026-11-27 01:07 KST에 성공한 실행 #6의 기준판은 0.1.2 (3), 커밋 `15d43fca4ac0a3ed80f91707c8211f7728cbbc62`다. unsigned IPA는 서명/재서명 후 설치해야 하며 그대로 설치되는 파일은 아니다. GitHub Actions 산출물 보관 기간은 7일이다.
 
 `Config/Local.xcconfig.example`을 `Config/Local.xcconfig`로 복사해 Apple 팀·확정 번들 ID·카카오 Native app key를 설정한다. 임시 번들 ID는 `com.deulgo.delivery`이며 등록·소유권 확인을 의미하지 않는다. 실제 설치 번들 ID와 카카오 iOS 설정값은 일치해야 한다. REST API/Admin 키는 앱에 넣지 않는다.
 

@@ -50,3 +50,15 @@ final result: blocked
 ## Remaining coverage gaps
 
 Small screens, Dynamic Type, dark mode, VoiceOver, real listing responses and external navigation handoff require separate device checks. Actual public requests remain unconnected and are not represented by fake entries.
+
+## Run #8 post-fix evidence
+
+- Native source commit: `483488cff18ba12f84bfbc8b54543999f3cd6b15`, iPhone 17 Pro / iOS 26.4.1.
+- Recapture: `../deulgo-0.1.3/run8-tests/screens/Send-form-keyboard-closed.png`.
+- Combined full view: `../deulgo-0.1.3/run8-tests/screens/send-comparison.png`.
+- Combined focused input region: `../deulgo-0.1.3/run8-tests/screens/send-focused.png`.
+- Same 887 × 1774 source and 1206 × 2622 native pixels, normalized to 402 pixels wide. Full-view source offset remains 53 pixels; focused crops use source y=120–505 and native y=195–580 to align the input regions. Empty form, light mode, keyboard closed.
+- P2 contrast/helper-size issue is resolved in the recapture. The field border, underline and example values are clearly visible; helpers follow the reference hierarchy. Native system fonts, 24-point margins, green disclosure label, flat existing brand green, platform tab bar and absence of a tab-root back arrow remain intentional. No text overflow, missing content or additional P0/P1/P2 visual drift was found in the combined full/focused comparison.
+- Run #8 failed earlier than the scroll check, at toolbar-close absence waiting. Video `../deulgo-0.1.3/run8-tests/failure.mp4` around 70 seconds onward visibly shows the keyboard closed and Next/tab bar restored. A single accessibility existence query took about 4.3 seconds of the 5-second expectation budget. The failure cannot be described as proof that the keyboard stayed visible.
+- Test polling now makes a fresh keyboard query and allows 15 seconds; it still requires no keyboard to exist. On failure it retains a screenshot and accessibility tree. The scroll and final navigation assertions remain unchanged and must pass.
+- Earlier P1 is unresolved until a successful runtime recheck covers scroll dismissal. No new app visuals were changed after these captures. Overall final result remains blocked pending interaction verification.
