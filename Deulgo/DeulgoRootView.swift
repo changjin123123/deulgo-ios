@@ -43,7 +43,7 @@ struct HomeView: View {
                         }.padding(20).background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
                     }.buttonStyle(.plain)
                     HStack {
-                        Text("저장한 요청").font(.headline)
+                        Text("임시 보관한 요청").font(.headline)
                         Spacer()
                         Button("모두 보기") { tab = .history }
                     }
@@ -51,7 +51,7 @@ struct HomeView: View {
                         Button { tab = .history } label: { RequestCard(request: request) }.buttonStyle(.plain)
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("아직 저장한 요청이 없어요").font(.headline)
+                            Text("임시 보관한 요청이 없어요").font(.headline)
                             Text("물품과 주소를 입력하면 여기서 다시 확인할 수 있어요.").font(.subheadline).foregroundStyle(.secondary)
                         }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -73,12 +73,12 @@ struct RequestCard: View {
             HStack {
                 Text(request.item).font(.headline).lineLimit(2)
                 Spacer()
-                Text("기기 저장").font(.caption.weight(.medium)).padding(.horizontal, 9).padding(.vertical, 5)
+                Text("임시 보관").font(.caption.weight(.medium)).padding(.horizontal, 9).padding(.vertical, 5)
                     .background(DeulgoStyle.green.opacity(0.10), in: Capsule())
             }
-            Label(request.pickup.line, systemImage: "circle").lineLimit(1)
+            Label(request.pickup.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "판매자에게 픽업 주소 확인 필요" : request.pickup.line, systemImage: "circle").lineLimit(1)
             Label(request.dropoff.line, systemImage: "mappin").lineLimit(1)
-            Text("\(request.count)개 · \(request.arrival.title)").font(.caption).foregroundStyle(.secondary)
+            Text(request.arrival.title).font(.caption).foregroundStyle(.secondary)
         }.font(.subheadline).padding(18).frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
     }
@@ -99,7 +99,7 @@ struct AppInfoView: View {
                 Text("저장한 내용은 다른 기기나 기존 웹과 동기화되지 않아요.")
             }.font(.subheadline)
             Section("개인정보") {
-                Text("주소 검색 때 검색어를 Apple 지도에 보내고, 길 안내 때 선택한 장소 이름과 좌표를 내비 앱에 전달해요. 거래글 조회는 버튼을 누를 때 시작해요.")
+                Text("주소 검색 때 검색어를 Apple 지도에 보내고, 길 안내 때 선택한 장소 이름과 좌표를 내비 앱에 전달해요. 상품 링크를 입력하면 해당 거래글의 공개 정보를 자동 조회해요.")
             }.font(.footnote).foregroundStyle(.secondary)
         }.navigationTitle("내 정보")
     }

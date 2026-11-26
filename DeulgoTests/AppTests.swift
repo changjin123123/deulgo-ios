@@ -48,6 +48,61 @@ final class RequestValidationTests: XCTestCase {
             XCTAssertThrowsError(try ListingLink.parse(value))
         }
     }
+    func testBuyerDraftAllowsPendingPickupButStillRequiresDropoff() {
+        var request = validRequest(); request.pickup = DeliveryAddress()
+        XCTAssertNoThrow(try request.validate(requirePickup: false))
+        XCTAssertThrowsError(try request.validate())
+        request.dropoff.line = "  "
+        XCTAssertThrowsError(try request.validate(requirePickup: false))
+    }
+    func testListingAutofillsTitleWithoutAssumingQuantityOrPackaging() {
+        var request = ShipmentDraft()
+        var fill = ListingAutofill()
+        let preview = ListingPreview(title: "의자 세트", description: "", dimensions: ItemDimensions(width: 60, depth: 40, height: 80))
+        XCTAssertTrue(fill.apply(preview, to: &request))
+        XCTAssertEqual(request.item, "의자 세트")
+        XCTAssertEqual(request.dimensions, preview.dimensions)
+        XCTAssertNil(request.count)
+        XCTAssertEqual(request.packaging, "판매자 확인 필요")
+        XCTAssertEqual(request.orientation, .unknown)
+    }
+    func testAutofillPreservesEditsAndClearsOnlyOldImportedValues() {
+        var request = ShipmentDraft()
+        var fill = ListingAutofill()
+        fill.apply(ListingPreview(title: "테이블", description: "", dimensions: ItemDimensions(width: 60, depth: 40, height: 80)), to: &request)
+        request.item = "내가 선택한 구성"
+        request.dimensions.width = 75
+        fill.clearImportedValues(from: &request)
+        XCTAssertEqual(request.item, "내가 선택한 구성")
+        XCTAssertEqual(request.dimensions.width, 75)
+        XCTAssertNil(request.dimensions.depth)
+        XCTAssertNil(request.dimensions.height)
+        XCTAssertFalse(fill.apply(ListingPreview(title: "새 거래글", description: "", dimensions: ItemDimensions(width: 20, depth: 30, height: 40)), to: &request))
+        XCTAssertEqual(request.item, "내가 선택한 구성")
+        XCTAssertEqual(request.dimensions.width, 75)
+        XCTAssertEqual(request.dimensions.depth, 30)
+    }
+    func testRemovingLinkClearsAutofillAndMissingNewDimensionsDoNotStayStale() {
+        var request = ShipmentDraft()
+        var fill = ListingAutofill()
+        fill.apply(ListingPreview(title: "첫 물품", description: "", dimensions: ItemDimensions(width: 60, depth: 40, height: 80)), to: &request)
+        fill.apply(ListingPreview(title: "다른 물품", description: "", dimensions: nil), to: &request)
+        XCTAssertEqual(request.item, "다른 물품")
+        XCTAssertEqual(request.dimensions, ItemDimensions())
+        fill.clearImportedValues(from: &request)
+        XCTAssertTrue(request.item.isEmpty)
+    }
+    func testExistingQuantityAndPackagingDecodeWhileNewUnknownValuesRoundTrip() throws {
+        var oldRequest = validRequest()
+        oldRequest.count = 3; oldRequest.orientation = .upright; oldRequest.packaging = "포장했어요"
+        let existing = try JSONDecoder().decode(ShipmentDraft.self, from: JSONEncoder().encode(oldRequest))
+        XCTAssertEqual(existing, oldRequest)
+        var withoutCount = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(ShipmentDraft())) as? [String: Any])
+        withoutCount.removeValue(forKey: "count")
+        let unknown = try JSONDecoder().decode(ShipmentDraft.self, from: JSONSerialization.data(withJSONObject: withoutCount))
+        XCTAssertNil(unknown.count)
+        XCTAssertEqual(unknown.orientation, .unknown)
+    }
 }
 
 @MainActor final class AppPersistenceTests: XCTestCase {
@@ -98,5 +153,25 @@ final class RequestValidationTests: XCTestCase {
         XCTAssertEqual(pasted?.title, "테이블")
         XCTAssertEqual(pasted?.dimensions?.width, 60)
         XCTAssertFalse(pasted?.description.contains("150,000") ?? true)
+    }
+    func testPendingPickupAndUnknownQuantitySurviveDraftStorage() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("data.json")
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let store = DeulgoStore(fileURL: url)
+        var request = ShipmentDraft(); request.item = "의자 세트"; request.dropoff.line = "받을 곳"
+        try store.save(request)
+        let restored = try XCTUnwrap(DeulgoStore(fileURL: url).data.requests.first)
+        XCTAssertEqual(restored.pickup, DeliveryAddress())
+        XCTAssertNil(restored.count)
+        XCTAssertEqual(restored.orientation, .unknown)
+    }
+    func testUnknownQuantityOrOrientationCannotBecomePositiveFit() {
+        var request = ShipmentDraft(); request.item = "의자"; request.dimensions = ItemDimensions(width: 30, depth: 40, height: 50)
+        var vehicle = VehicleProfile(); vehicle.model = "테스트"; vehicle.measurements = VehicleMeasurements(openingWidth: 100, openingHeight: 100, insideWidth: 100, insideDepth: 100, insideHeight: 100)
+        XCTAssertTrue(ReferenceData.shared.fit(request: request, vehicle: vehicle).contains("수량"))
+        request.count = 1
+        XCTAssertTrue(ReferenceData.shared.fit(request: request, vehicle: vehicle).contains("눕히거나"))
+        request.orientation = .any
+        XCTAssertTrue(ReferenceData.shared.fit(request: request, vehicle: vehicle).contains("입력한 치수 조건은 맞아요"))
     }
 }

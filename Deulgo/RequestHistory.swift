@@ -8,7 +8,7 @@ struct RequestHistoryView: View {
             ScrollView {
                 LazyVStack(spacing: 14) {
                     if store.data.requests.isEmpty {
-                        ContentUnavailableView("아직 저장한 요청이 없어요", systemImage: "shippingbox", description: Text("보내기에서 물품과 주소를 입력해보세요."))
+                        ContentUnavailableView("임시 보관한 요청이 없어요", systemImage: "shippingbox", description: Text("보내기에서 물품과 주소를 입력해보세요."))
                     }
                     ForEach(store.data.requests.filter { query.isEmpty || $0.item.localizedCaseInsensitiveContains(query) }) { request in
                         NavigationLink { RequestDetailView(requestID: request.id) } label: { RequestCard(request: request) }.buttonStyle(.plain)
@@ -35,12 +35,13 @@ struct RequestDetailView: View {
             if let request {
                 Section {
                     Text(request.item).font(.title2.bold())
-                    LabeledContent("상태", value: "이 아이폰에 저장됨")
-                    LabeledContent("수량", value: "\(request.count)개")
+                    LabeledContent("상태", value: "임시 보관 · 아직 게시되지 않음")
+                    if let count = request.count { LabeledContent("기존 입력 수량", value: "\(count)개") }
+                    else { Text("물품 구성·수량은 판매자 확인 필요").font(.caption).foregroundStyle(.secondary) }
                     Text(request.packaging).font(.subheadline)
                 }
                 Section("이동 구간") {
-                    AddressSummary(title: "픽업지", address: request.pickup)
+                    AddressSummary(title: "픽업지", address: request.pickup, emptyText: "판매자에게 주소 확인 필요")
                     AddressSummary(title: "도착지", address: request.dropoff)
                     LabeledContent("희망 시간", value: request.arrival == .scheduled ? request.desiredAt.formatted(date: .abbreviated, time: .shortened) : request.arrival.title)
                     Button { navigating = request } label: { Label("길 안내", systemImage: "arrow.triangle.turn.up.right.diamond") }

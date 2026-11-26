@@ -7,10 +7,10 @@ struct ItemDimensions: Codable, Equatable {
 }
 
 enum ItemOrientation: String, Codable, CaseIterable, Identifiable {
-    case any, upright, fixed
+    case unknown, any, upright, fixed
     var id: Self { self }
     var title: String {
-        switch self { case .any: return "눕혀도 돼요"; case .upright: return "세워서 운반해요"; case .fixed: return "현재 방향 그대로" }
+        switch self { case .unknown: return "판매자 확인 필요"; case .any: return "눕혀도 돼요"; case .upright: return "세워서 운반해요"; case .fixed: return "현재 방향 그대로" }
     }
 }
 
@@ -39,12 +39,13 @@ struct ShipmentDraft: Codable, Identifiable, Equatable {
     var createdAt = Date()
     var updatedAt = Date()
     var item = ""
-    var count = 1
+    // Older drafts retain their entered count; a link alone does not establish quantity.
+    var count: Int?
     var link = ""
     var dimensions = ItemDimensions()
     var weightKg: Double?
-    var orientation: ItemOrientation = .any
-    var packaging = "포장할 예정이에요"
+    var orientation: ItemOrientation = .unknown
+    var packaging = "판매자 확인 필요"
     var pickup = DeliveryAddress()
     var dropoff = DeliveryAddress()
     var arrival: ArrivalPreference = .flexible
@@ -54,11 +55,13 @@ struct ShipmentDraft: Codable, Identifiable, Equatable {
     var tools: Set<String> = []
     var note = ""
 
-    func validate(now: Date = Date()) throws {
+    func validate(now: Date = Date(), requirePickup: Bool = true) throws {
         guard !item.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw AppInputError("물품 이름을 입력해주세요.") }
-        guard (1...10).contains(count) else { throw AppInputError("물품 수량은 1~10개로 입력해주세요.") }
-        guard !pickup.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              !dropoff.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw AppInputError("픽업지와 도착지를 입력해주세요.") }
+        if let count, !(1...10).contains(count) { throw AppInputError("물품 수량을 확인해주세요.") }
+        if requirePickup && pickup.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw AppInputError("판매자에게 픽업 주소를 확인해주세요.")
+        }
+        guard !dropoff.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw AppInputError("받을 곳의 주소를 입력해주세요.") }
         for n in [dimensions.width, dimensions.depth, dimensions.height] {
             if let n, !n.isFinite || n <= 0 || n > 1000 { throw AppInputError("물품 치수는 0보다 크고 1,000cm 이하로 입력해주세요.") }
         }

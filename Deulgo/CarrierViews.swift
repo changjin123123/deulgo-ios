@@ -37,12 +37,10 @@ struct CarrierHomeView: View {
                 Section("운반 요청") {
                     ContentUnavailableView("실제 요청 연결 준비 중", systemImage: "tray", description: Text("현재는 차량 등록과 운반 조건 확인까지 사용할 수 있어요."))
                 }
-                Section {
-                    DisclosureGroup("운반자 준수사항 · 검토안") {
-                        Text("인수한 물품의 고의적인 가로채기·판매·은닉은 금지됩니다. 위반이 확인되면 영구 이용 제한과 손해배상 청구 대상이 되며, 범죄 혐의에 대해서는 수사기관 신고 및 증거 제출을 진행합니다.")
-                            .font(.footnote)
-                        Text("기존 시제품에 작성한 검토 문구이며, 출시 전 운영 정책·법률 검토가 필요합니다.").font(.caption).foregroundStyle(.secondary)
-                    }
+                Section("운반자 준수사항 · 검토안") {
+                    Text("인수한 물품의 고의적인 가로채기·판매·은닉은 금지됩니다. 위반이 확인되면 영구 이용 제한과 손해배상 청구 대상이 되며, 범죄 혐의에 대해서는 수사기관 신고 및 증거 제출을 진행합니다.")
+                        .font(.footnote)
+                    Text("기존 시제품에 작성한 검토 문구이며, 출시 전 운영 정책·법률 검토가 필요합니다.").font(.caption).foregroundStyle(.secondary)
                 }
             }.navigationTitle("운반하기")
                 .sheet(isPresented: $adding) { VehicleEditor(initial: VehicleProfile()) }

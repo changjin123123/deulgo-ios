@@ -19,7 +19,7 @@ struct PrimaryAction: View {
 
 struct LocalModeNote: View {
     var body: some View {
-        Label("기기 테스트 · 저장한 요청은 다른 사람에게 공개되지 않아요", systemImage: "iphone")
+        Label("임시 보관 · 아직 운반자에게 공개되지 않아요", systemImage: "iphone")
             .font(.caption).foregroundStyle(.secondary)
     }
 }
@@ -67,10 +67,11 @@ struct ToolSelection: View {
 struct AddressSummary: View {
     let title: String
     let address: DeliveryAddress
+    var emptyText = "주소 미입력"
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(address.line.isEmpty ? "주소 미입력" : address.line).font(.subheadline.weight(.medium))
+            Text(address.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? emptyText : address.line).font(.subheadline.weight(.medium))
             if !address.detail.isEmpty { Text(address.detail).font(.caption).foregroundStyle(.secondary) }
         }.frame(maxWidth: .infinity, alignment: .leading)
     }

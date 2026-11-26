@@ -2,6 +2,8 @@
 
 이 파일은 개발 중인 앱을 본인 iPhone에서 시험하는 절차다. App Store 배포본이 아니며, 실제 배차·결제는 연결되지 않았다. iOS 17 이상이 필요하다. 최신 확인판은 0.1.1 (2)이며, [성공한 실행 #5](https://github.com/changjin123123/deulgo-ios/actions/runs/45841591387)에서 받을 수 있다.
 
+0.1.2는 다음 업데이트용 소스만 준비한 상태다. 아래 링크의 0.1.1 설치 파일에는 링크 자동 입력 등 0.1.2 변경이 아직 들어 있지 않다.
+
 ## Windows에서 설치
 
 1. 이 저장소의 Actions에서 성공한 `iPhone build and tests` 실행을 연다. 새 빌드를 실행하면 `ios-release` 환경 승인이 필요하다. 본인 계정으로 `Review deployments`에서 실행 커밋을 확인하고 승인한다.

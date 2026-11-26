@@ -74,6 +74,8 @@ struct DimensionValue: Decodable { let label: String; let mm: [Double]; let cond
                               dimensions: dims.map { ItemDimensions(width: $0["w"], depth: $0["d"], height: $0["h"]) })
     }
     func fit(request: ShipmentDraft, vehicle: VehicleProfile) -> String {
+        guard let count = request.count else { return "묶음 구성과 수량을 판매자에게 확인해야 적재 조건을 비교할 수 있어요." }
+        guard request.orientation != .unknown else { return "물품을 눕히거나 세워도 되는지 판매자에게 확인해주세요." }
         if vehicle.isOpenSpace { return "개방형 적재공간은 돌출과 고정 상태를 직접 확인해주세요." }
         let m = vehicle.measurements
         let number: (Double?) -> Any = { $0.map { $0 as Any } ?? NSNull() }
@@ -81,7 +83,7 @@ struct DimensionValue: Decodable { let label: String; let mm: [Double]; let cond
             "vehicle": ["openingWidth": number(m.openingWidth), "openingHeight": number(m.openingHeight),
                         "insideWidth": number(m.insideWidth), "insideDepth": number(m.insideDepth), "insideHeight": number(m.insideHeight)],
             "pieces": [["label": request.item, "w": number(request.dimensions.width), "d": number(request.dimensions.depth),
-                        "h": number(request.dimensions.height), "count": request.count, "orientation": request.orientation.rawValue]],
+                        "h": number(request.dimensions.height), "count": count, "orientation": request.orientation.rawValue]],
             "margin": vehicle.margin
         ]
         let result = context?.objectForKeyedSubscript("FitRules")?.objectForKeyedSubscript("compare")?.call(withArguments: [input])

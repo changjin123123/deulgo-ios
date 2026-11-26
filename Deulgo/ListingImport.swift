@@ -38,6 +38,36 @@ struct ListingPreview: Identifiable {
     var dimensions: ItemDimensions?
 }
 
+struct ListingAutofill {
+    private var importedTitle: String?
+    private var importedDimensions = ItemDimensions()
+
+    // Only replace empty or previously imported values, never edits made while loading.
+    @discardableResult mutating func apply(_ preview: ListingPreview, to draft: inout ShipmentDraft) -> Bool {
+        let mayFillTitle = draft.item.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || draft.item == importedTitle
+        if mayFillTitle { draft.item = preview.title; importedTitle = preview.title }
+        for key in [\ItemDimensions.width, \ItemDimensions.depth, \ItemDimensions.height] {
+            if draft.dimensions[keyPath: key] == nil || draft.dimensions[keyPath: key] == importedDimensions[keyPath: key] {
+                let value = preview.dimensions?[keyPath: key]
+                draft.dimensions[keyPath: key] = value
+                importedDimensions[keyPath: key] = value
+            }
+        }
+        return mayFillTitle
+    }
+
+    mutating func clearImportedValues(from draft: inout ShipmentDraft) {
+        if let importedTitle, draft.item == importedTitle { draft.item = "" }
+        for key in [\ItemDimensions.width, \ItemDimensions.depth, \ItemDimensions.height] {
+            if let value = importedDimensions[keyPath: key], draft.dimensions[keyPath: key] == value {
+                draft.dimensions[keyPath: key] = nil
+            }
+        }
+        importedTitle = nil
+        importedDimensions = ItemDimensions()
+    }
+}
+
 @MainActor final class ListingImporter: ObservableObject {
     @Published private(set) var preview: ListingPreview?
     @Published private(set) var busy = false

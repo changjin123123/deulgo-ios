@@ -24,7 +24,8 @@ import Combine
         }
     }
     func save(_ request: ShipmentDraft) throws {
-        try request.validate()
+        // This store keeps private drafts, not published delivery requests.
+        try request.validate(requirePickup: false)
         var next = data
         var updated = request
         updated.updatedAt = Date()
