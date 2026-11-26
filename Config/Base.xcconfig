@@ -1,0 +1,6 @@
+// Register the exact bundle ID under the Kakao native key's iOS platform settings.
+PRODUCT_BUNDLE_IDENTIFIER = com.deulgo.delivery
+KAKAO_NATIVE_APP_KEY =
+DEVELOPMENT_TEAM =
+// This optional file stays outside version control and deliverable archives.
+#include? "Local.xcconfig"
