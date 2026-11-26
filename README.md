@@ -2,13 +2,13 @@
 
 물건을 보내는 사람과 가는 김에 운반하는 사람을 위한 SwiftUI 앱의 첫 통합 구현이다. iPhone부터 완성하고 Android는 그다음 진행한다.
 
-0.1.1 (2)는 **iPhone 기기용 빌드 성공 · XCTest 21개 및 규칙 검사 6개 통과 · 시뮬레이터 홈 화면 실행 확인** 상태다. 보내기 순서 변경과 보호된 환경의 카카오 키가 새 IPA에 반영됐고, 키 값 출력 없이 설정 포함 검사를 통과했다. 외부 내비 앱의 실제 목적지 전달은 아직 확인 전이며, 실제 이용자 간 배차·결제 서비스는 아직 아니다.
+0.1.2 (3)은 **iPhone 기기용 빌드 성공 · XCTest 28개 및 규칙 검사 6개 통과 · 시뮬레이터 홈 화면 실행 확인** 상태다. 링크 자동 입력·일반 물품 안내·가는 김에 문구와 보호된 환경의 카카오 키가 새 IPA에 반영됐고, 키 값 출력 없이 설정 포함 검사를 통과했다. 외부 내비 앱의 실제 목적지 전달은 아직 확인 전이며, 실제 이용자 간 배차·결제 서비스는 아직 아니다.
 
-[성공한 빌드와 산출물](https://github.com/changjin123123/deulgo-ios/actions/runs/45841591387) · [Windows에서 iPhone 테스트 설치](INSTALL.md) · [검증 범위](VALIDATION.md)
+[성공한 빌드와 산출물](https://github.com/changjin123123/deulgo-ios/actions/runs/45853514802) · [Windows에서 iPhone 테스트 설치](INSTALL.md) · [검증 범위](VALIDATION.md)
 
-## 다음 업데이트 · 0.1.2 (3) 소스 준비
+## 이번 업데이트 · 0.1.2 (3)
 
-아래 변경은 소스에 반영했으며 아직 새 iPhone 빌드와 실기기 검증을 실행하지 않았다. 위의 성공한 설치 파일은 0.1.1이다.
+아래 변경을 포함한 새 iPhone 빌드가 2026-11-27 01:07 KST에 성공했다. 실제 iPhone 업데이트 설치와 전체 화면 직접 조작은 아직 확인 전이다.
 
 - 허용한 거래글 링크 입력 후 자동 조회하고 물품명을 바로 채운다. 별도의 물품 정보 적용 버튼은 없다. 조회 실패 시 다시 불러오기·내용 붙여넣기·직접 입력을 사용할 수 있다.
 - 직접 수정한 물품명·치수는 자동 조회로 덮어쓰지 않는다. 링크를 바꾸거나 지우면 그 링크에서 자동으로 채운 값만 정리한다.
@@ -34,7 +34,7 @@
 
 전체 주소·상세주소는 공개 목록에 표시하지 않고 배정된 운반자에게 필요한 범위로 제공하는 구조가 필요하다. 게시·신청·배정의 실제 서버 처리와 접근 권한은 후속 구현 범위다.
 
-자동 입력 보호, 링크 변경, 기존 자료 읽기, 픽업지 미확인 보관, 적재 판정 관련 XCTest 7개를 추가했다. 총 28개 XCTest는 다음 승인 빌드에서 실행해야 한다.
+자동 입력 보호, 링크 변경, 기존 자료 읽기, 픽업지 미확인 보관, 적재 판정 관련 XCTest 7개를 추가했다. 총 28개 XCTest는 승인된 실행 #6에서 모두 통과했다.
 
 ## 이번 구현
 
@@ -83,7 +83,7 @@
 - `ListingImport.swift`: 상품 링크 검증·공개 미리보기
 - `ReferenceData.swift`, `Resources/`: 기존 순수 규칙과 차량 참고 자료
 - `Navigation*.swift`, `ExternalNavigation.swift`, `PlaceSearch.swift`: 목적지와 내비 연결
-- `DeulgoTests/`: XCTest 28개 (0.1.1의 21개 통과 기록과 이번 추가 7개의 실행 대기를 구분)
+- `DeulgoTests/`: XCTest 28개 (0.1.1의 21개와 이번 추가 7개 모두 실행 #6에서 통과)
 - `scripts/test_rules.cjs`: 실제 번들 규칙을 DOM 없는 JavaScript 환경에서 검증
 
 차량 카탈로그는 기존 시제품 자료를 복사한 것으로 이번 작업에서 개별 제원을 재조사하지 않았다. 미확보값은 그대로 유지하며 판본·좌석 상태·시장 차이를 숨기지 않는다. 현재 요청은 물품명 하나를 중심으로 작성한다. 거래글의 묶음 구성·수량·종류별 크기는 자동 확정하지 않으며, 여러 종류/분해 조각 및 확인된 수량 입력은 후속 항목이다.
@@ -99,7 +99,7 @@ xcodebuild test -project Deulgo.xcodeproj -scheme Deulgo \
   -destination 'platform=iOS Simulator,name=<설치된 iPhone 시뮬레이터 이름>'
 ```
 
-`.github/workflows/ios-check.yml`은 원본 저장소의 `main`에서 수동 실행한다. `ios-release` 환경의 본인 승인 후 XCTest 결과 개수 확인, 시뮬레이터 앱 실행·캡처, 기기용 Release 빌드와 unsigned IPA 생성을 진행한다. 2026-11-27 00:01 KST에 성공한 실행 #5의 기준판은 0.1.1 (2), 커밋 `69415e4a42310dfe1e55bf5fc4fa338f997befbb`다. unsigned IPA는 서명/재서명 후 설치해야 하며 그대로 설치되는 파일은 아니다. GitHub Actions 산출물 보관 기간은 7일이다.
+`.github/workflows/ios-check.yml`은 원본 저장소의 `main`에서 수동 실행한다. `ios-release` 환경의 본인 승인 후 XCTest 결과 개수 확인, 시뮬레이터 앱 실행·캡처, 기기용 Release 빌드와 unsigned IPA 생성을 진행한다. 2026-11-27 01:07 KST에 성공한 실행 #6의 기준판은 0.1.2 (3), 커밋 `15d43fca4ac0a3ed80f91707c8211f7728cbbc62`다. unsigned IPA는 서명/재서명 후 설치해야 하며 그대로 설치되는 파일은 아니다. GitHub Actions 산출물 보관 기간은 7일이다.
 
 `Config/Local.xcconfig.example`을 `Config/Local.xcconfig`로 복사해 Apple 팀·확정 번들 ID·카카오 Native app key를 설정한다. 임시 번들 ID는 `com.deulgo.delivery`이며 등록·소유권 확인을 의미하지 않는다. 실제 설치 번들 ID와 카카오 iOS 설정값은 일치해야 한다. REST API/Admin 키는 앱에 넣지 않는다.
 
