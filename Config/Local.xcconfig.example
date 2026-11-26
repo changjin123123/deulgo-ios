@@ -1,0 +1,6 @@
+// Copy to Local.xcconfig, then edit on the build machine.
+// Use the iOS native app key, NEVER a REST API/Admin/Client Secret key.
+KAKAO_NATIVE_APP_KEY =
+// Must match the Kakao developer console and your Apple signing identity.
+PRODUCT_BUNDLE_IDENTIFIER = com.deulgo.delivery
+DEVELOPMENT_TEAM =
