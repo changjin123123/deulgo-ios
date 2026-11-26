@@ -30,6 +30,7 @@ jobs:
       - name: Run XCTest
         run: xcodebuild -quiet test -project Deulgo.xcodeproj -scheme Deulgo -destination "platform=iOS Simulator,arch=arm64,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/simulator -resultBundlePath build/Tests.xcresult CODE_SIGNING_ALLOWED=NO
       - name: Export test summary
+        if: always()
         run: |
           xcrun xcresulttool get test-results summary --path build/Tests.xcresult > build/test-summary.json
           cat build/test-summary.json
@@ -92,6 +93,7 @@ jobs:
         if: always()
         run: rm -f Config/Local.xcconfig
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: Deulgo-iPhone-screen
           path: |

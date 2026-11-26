@@ -10,9 +10,9 @@ final class ShipmentUITests: XCTestCase {
         add(attachment)
     }
 
-    @MainActor private func waitForKeyboardToClose(_ app: XCUIApplication) {
+    @MainActor private func waitForKeyboardToClose(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.keyboards.firstMatch)
-        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 5), .completed)
+        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 5), .completed, file: file, line: line)
     }
 
     @MainActor func testSendKeyboardDismissalAndBottomAction() {
@@ -43,6 +43,7 @@ final class ShipmentUITests: XCTestCase {
             next.exists && abs(next.frame.minY - bottomY) < 3
         }, object: next)
         XCTAssertEqual(XCTWaiter.wait(for: [restored], timeout: 5), .completed)
+        capture("Send-form-keyboard-dismissed", app: app)
 
         item.tap()
         item.typeText("Test parcel")
@@ -54,6 +55,7 @@ final class ShipmentUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         app.scrollViews["shipment.itemScroll"].swipeDown()
         waitForKeyboardToClose(app)
+        capture("Send-form-scroll-dismissed", app: app)
         XCTAssertTrue(next.waitForExistence(timeout: 5))
         next.tap()
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == %@", "주소 찾기")).firstMatch.waitForExistence(timeout: 5))

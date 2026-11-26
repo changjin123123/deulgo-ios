@@ -90,7 +90,7 @@ struct ShipmentEditor: View {
                     .padding(.horizontal, 24)
                     .frame(minHeight: geometry.size.height, alignment: .top)
                 }
-                .scrollDismissesKeyboard(.interactively)
+                .scrollDismissesKeyboard(.immediately)
                 .background { Color(.systemBackground).contentShape(Rectangle()).onTapGesture(perform: dismissKeyboard) }
                 .accessibilityIdentifier("shipment.itemScroll")
             }
@@ -99,7 +99,7 @@ struct ShipmentEditor: View {
                 Section { progressHeader }
                 if step == 1 { addressSections }
                 if step == 2 { reviewSections }
-            }.scrollDismissesKeyboard(.interactively)
+            }.scrollDismissesKeyboard(.immediately)
         }
     }
 
@@ -120,13 +120,13 @@ struct ShipmentEditor: View {
                 Text("중고거래 링크").font(.title3.weight(.semibold))
                 Text("· 선택").font(.subheadline).foregroundStyle(.secondary)
             }.padding(.bottom, 4).onTapGesture(perform: dismissKeyboard)
-            TextField("당근·번개장터·중고나라 링크", text: Binding(get: { draft.link }, set: changeLink), axis: .vertical)
+            TextField("당근·번개장터·중고나라 링크", text: Binding(get: { draft.link }, set: changeLink), prompt: Text("당근·번개장터·중고나라 링크").foregroundColor(.primary.opacity(0.6)), axis: .vertical)
                 .lineLimit(1...2).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                 .focused($focusedInput, equals: .link)
                 .padding(.horizontal, 14).padding(.vertical, 16).frame(minHeight: 54)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(focusedInput == .link ? DeulgoStyle.green : Color(.separator), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(focusedInput == .link ? DeulgoStyle.green : Color(.systemGray), lineWidth: 1))
                 .accessibilityLabel("중고거래 링크").accessibilityIdentifier("shipment.link")
-            Text("링크를 넣으면 물품명이 자동 입력돼요.").font(.footnote).foregroundStyle(.secondary)
+            Text("링크를 넣으면 물품명이 자동 입력돼요.").font(.subheadline).foregroundStyle(Color.primary.opacity(0.6))
                 .onTapGesture(perform: dismissKeyboard)
             if importer.busy {
                 HStack { Text("물품 정보 불러오는 중…"); Spacer(); ProgressView() }.font(.footnote)
@@ -163,11 +163,11 @@ struct ShipmentEditor: View {
         }
         VStack(alignment: .leading, spacing: 12) {
             Text("무엇을 보낼까요?").font(.title2.bold()).onTapGesture(perform: dismissKeyboard)
-            Text("링크가 없으면 물품명을 직접 적어주세요.").font(.footnote).foregroundStyle(.secondary).onTapGesture(perform: dismissKeyboard)
-            TextField("예: 접이식 테이블", text: $draft.item)
+            Text("링크가 없으면 물품명을 직접 적어주세요.").font(.subheadline).foregroundStyle(Color.primary.opacity(0.6)).onTapGesture(perform: dismissKeyboard)
+            TextField("예: 접이식 테이블", text: $draft.item, prompt: Text("예: 접이식 테이블").foregroundColor(.primary.opacity(0.6)))
                 .focused($focusedInput, equals: .item).submitLabel(.done).onSubmit(dismissKeyboard)
                 .font(.body).padding(.vertical, 16)
-                .overlay(alignment: .bottom) { Rectangle().fill(Color(.separator)).frame(height: 1) }
+                .overlay(alignment: .bottom) { Rectangle().fill(Color(.systemGray)).frame(height: 1) }
                 .accessibilityLabel("물품 이름").accessibilityIdentifier("shipment.item")
         }.padding(.top, 44)
         VStack(alignment: .leading, spacing: 12) {
