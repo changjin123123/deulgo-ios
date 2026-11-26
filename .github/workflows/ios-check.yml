@@ -5,22 +5,12 @@ permissions:
   contents: read
 jobs:
   verify:
+    if: github.repository == 'changjin123123/deulgo-ios' && github.ref == 'refs/heads/main'
+    environment: ios-release
     runs-on: macos-26
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Configure optional native key
-        env:
-          KAKAO_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
-        run: |
-          python3 - <<'PY'
-          import os, re
-          from pathlib import Path
-          key = os.environ.get('KAKAO_KEY', '')
-          if key and not re.fullmatch(r'[0-9a-fA-F]{32}', key):
-              raise SystemExit('Invalid native app key format')
-          Path('Config/Local.xcconfig').write_text('KAKAO_NATIVE_APP_KEY = ' + key + '\n')
-          PY
       - name: Check toolchain
         run: |
           xcodebuild -version
@@ -57,11 +47,37 @@ jobs:
           xcrun simctl launch --terminate-running-process "$SIMULATOR_ID" com.deulgo.delivery
           sleep 3
           xcrun simctl io "$SIMULATOR_ID" screenshot build/Deulgo-iPhone.png
+      - name: Configure approved native key
+        env:
+          KAKAO_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          key = os.environ.get('KAKAO_KEY', '')
+          if not re.fullmatch(r'[0-9a-fA-F]{32}', key):
+              raise SystemExit('Missing or invalid approved native app key')
+          path = Path('Config/Local.xcconfig')
+          path.write_text('KAKAO_NATIVE_APP_KEY = ' + key + '\n')
+          path.chmod(0o600)
+          PY
       - name: Build unsigned iPhone application
         run: |
           xcodebuild -quiet build -project Deulgo.xcodeproj -scheme Deulgo -configuration Release -destination 'generic/platform=iOS' -derivedDataPath build/device CODE_SIGNING_ALLOWED=NO
           mkdir -p build/package/Payload
           cp -R build/device/Build/Products/Release-iphoneos/Deulgo.app build/package/Payload/
+          python3 - <<'PY'
+          import plistlib, re
+          from pathlib import Path
+          settings = Path('Config/Local.xcconfig').read_text()
+          key = settings.partition('=')[2].strip()
+          info = plistlib.loads(Path('build/package/Payload/Deulgo.app/Info.plist').read_bytes())
+          if not re.fullmatch(r'[0-9a-fA-F]{32}', key) or info.get('KakaoNativeAppKey') != key:
+              raise SystemExit('Packaged native key validation failed')
+          if info.get('CFBundleIdentifier') != 'com.deulgo.delivery':
+              raise SystemExit('Packaged bundle identifier mismatch')
+          print('PASS: approved native key and bundle identifier packaged; key value withheld')
+          PY
           cd build/package
           zip -qr ../Deulgo-unsigned.ipa Payload
       - uses: actions/upload-artifact@v4
@@ -69,6 +85,9 @@ jobs:
           name: Deulgo-iPhone-unsigned
           path: build/Deulgo-unsigned.ipa
           retention-days: 7
+      - name: Remove temporary native key settings
+        if: always()
+        run: rm -f Config/Local.xcconfig
       - uses: actions/upload-artifact@v4
         with:
           name: Deulgo-iPhone-screen
