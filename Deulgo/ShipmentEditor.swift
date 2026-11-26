@@ -120,7 +120,7 @@ struct ShipmentEditor: View {
                 Text("중고거래 링크").font(.title3.weight(.semibold))
                 Text("· 선택").font(.subheadline).foregroundStyle(.secondary)
             }.padding(.bottom, 4).onTapGesture(perform: dismissKeyboard)
-            TextField("당근·번개장터·중고나라 링크", text: Binding(get: { draft.link }, set: changeLink), prompt: Text("당근·번개장터·중고나라 링크").foregroundColor(.primary.opacity(0.6)), axis: .vertical)
+            TextField("상품 링크를 붙여넣어주세요", text: Binding(get: { draft.link }, set: changeLink), prompt: Text("상품 링크를 붙여넣어주세요").foregroundColor(.primary.opacity(0.6)), axis: .vertical)
                 .lineLimit(1...2).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                 .focused($focusedInput, equals: .link)
                 .padding(.horizontal, 14).padding(.vertical, 16).frame(minHeight: 54)
@@ -134,8 +134,9 @@ struct ShipmentEditor: View {
             if let error = importer.error {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(error).font(.footnote).foregroundStyle(.secondary)
-                    if (try? ListingLink.parse(draft.link)) != nil {
+                    if let link = try? ListingLink.parse(draft.link) {
                         Button("정보 다시 불러오기") { Task { await importer.load(draft.link) } }.font(.subheadline)
+                        Link("\(link.platform) 원문 열기", destination: link.url).font(.footnote)
                     }
                     DisclosureGroup("내용을 복사해서 입력하기") {
                         TextField("상품명과 필요한 설명", text: $pasted, axis: .vertical).lineLimit(3...6).focused($focusedInput, equals: .pasted)

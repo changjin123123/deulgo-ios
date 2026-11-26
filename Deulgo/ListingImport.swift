@@ -23,10 +23,30 @@ struct ListingLink {
         } else if host == "go.bgzt.link", matches("^/[A-Za-z0-9_-]{4,128}/?$") { platform = "번개장터" }
         else if ["joongna.com", "web.joongna.com"].contains(host), matches("^/product/[0-9]+/?$") {
             platform = "중고나라"; c.host = "web.joongna.com"
-        } else { throw AppInputError("당근·번개장터·중고나라의 물품 판매글을 넣어주세요. 부동산·카페 링크는 상품 조회를 지원하지 않아요.") }
+        } else if ["hellomarket.com", "www.hellomarket.com"].contains(host), matches("^/item/[0-9]+/?$") {
+            platform = "헬로마켓"; c.host = "www.hellomarket.com"
+        } else if ["fruitsfamily.com", "www.fruitsfamily.com", "production.fruitsfamily.com"].contains(host), matches("^/product/[A-Za-z0-9]+(?:/[^/]+)?/?$") {
+            platform = "후루츠패밀리"; c.host = "fruitsfamily.com"
+        } else { throw AppInputError("지원하는 중고거래 사이트의 상품 링크를 넣어주세요. 홈·검색·부동산·카페 주소는 사용할 수 없어요.") }
         c.query = nil; c.fragment = nil
         guard let result = c.url else { throw AppInputError("링크를 확인해주세요.") }
         return ListingLink(url: result, platform: platform)
+    }
+}
+
+enum ListingMetadataTitle {
+    static func productName(_ raw: String?, platform: String) throws -> String {
+        var title = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let generic = ["당근", "당근마켓", "번개장터", "중고나라", "헬로마켓", "후루츠패밀리", "fruitsfamily", "상품 상세", "상품상세",
+                       "헬로마켓 - 수수료 없는 전국구 중고거래", "상품 상세 | 헬로마켓 - 수수료 없는 전국구 중고거래",
+                       "후루츠패밀리 - 빈티지, 세컨핸드 패션 중고거래 앱", "후루츠패밀리 - 빈티지 세컨핸드 패션 중고거래"]
+        let suffix = " | " + platform
+        if title.hasSuffix(suffix) { title = String(title.dropLast(suffix.count)).trimmingCharacters(in: .whitespacesAndNewlines) }
+        guard title.count > 1, !generic.contains(title.lowercased()),
+              title.range(of: "access denied|captcha|로그인|페이지를 찾을|just a moment", options: [.regularExpression, .caseInsensitive]) == nil else {
+            throw AppInputError("공개 상품명을 확인하지 못했어요. 원문 내용을 복사하거나 직접 입력해주세요.")
+        }
+        return String(title.prefix(100))
     }
 }
 
@@ -104,11 +124,7 @@ struct ListingAutofill {
                 let resolved = try ListingLink.parse(final.absoluteString)
                 guard resolved.platform == link.platform else { throw AppInputError("다른 서비스로 이동하는 링크는 사용하지 않아요.") }
             }
-            let title = String((metadata.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines).prefix(100))
-            guard title.count > 1, !["당근", "당근마켓", "번개장터", "중고나라"].contains(title),
-                  title.range(of: "access denied|captcha|로그인|페이지를 찾을|just a moment", options: [.regularExpression, .caseInsensitive]) == nil else {
-                throw AppInputError("공개 상품명을 확인하지 못했어요. 원문 내용을 복사하거나 직접 입력해주세요.")
-            }
+            let title = try ListingMetadataTitle.productName(metadata.title, platform: link.platform)
             // Keep metadata compact. Never turn the listing price into a delivery input.
             preview = ListingPreview(title: title, description: "", imageData: nil, dimensions: nil)
             if let imageProvider = metadata.imageProvider, imageProvider.canLoadObject(ofClass: UIImage.self) {

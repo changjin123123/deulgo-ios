@@ -55,6 +55,46 @@ final class RequestValidationTests: XCTestCase {
         request.dropoff.line = "  "
         XCTAssertThrowsError(try request.validate(requirePickup: false))
     }
+    func testAdditionalMarketplaceProductLinks() throws {
+        let examples = [
+            ("https://hellomarket.com/item/185286509?listType=recomm_item&viewLocation=home_screen", "헬로마켓", "www.hellomarket.com"),
+            ("https://fruitsfamily.com/product/6ki7m/나이키-반팔티?share=true#details", "후루츠패밀리", "fruitsfamily.com"),
+            ("https://production.fruitsfamily.com/product/70hv3/휴무-및-상품-발송-안내", "후루츠패밀리", "fruitsfamily.com")
+        ]
+        for (input, platform, host) in examples {
+            let link = try ListingLink.parse(input)
+            XCTAssertEqual(link.platform, platform)
+            XCTAssertEqual(link.url.host, host)
+            let components = try XCTUnwrap(URLComponents(url: link.url, resolvingAgainstBaseURL: false))
+            XCTAssertNil(components.query); XCTAssertNil(components.fragment)
+            var request = validRequest(); request.link = input
+            XCTAssertNoThrow(try request.validate()) // A failed fetch must not block manually entered details.
+        }
+    }
+    func testAdditionalMarketplacesRejectNonProductsAndImpostors() {
+        for input in [
+            "https://www.charan.style/item/5299705",
+            "https://www.hellomarket.com/search", "https://www.hellomarket.com/item/undefined",
+            "https://fruitsfamily.com/brand/Nike", "https://fruitsfamily.com/product/", "https://fruitsfamily.com/product/6ki7m/name/extra",
+            "https://www.hellomarket.com.evil.test/item/185286509", "https://evil.hellomarket.com/item/185286509",
+            "https://fruitsfamily.com@evil.test/product/6ki7m/nike", "https://user:pass@www.hellomarket.com/item/185286509",
+            "https://www.hellomarket.com:8443/item/185286509", "http://fruitsfamily.com/product/6ki7m/nike",
+            "https://fruitsfamily.com/product/6ki7m/nike https://www.hellomarket.com/item/185286509"
+        ] { XCTAssertThrowsError(try ListingLink.parse(input), input) }
+    }
+    func testGenericMarketplaceMetadataCannotBecomeItemName() {
+        for title in [nil, "", "헬로마켓", "FruitsFamily", "상품 상세 | 헬로마켓", "상품 상세 | 헬로마켓 - 수수료 없는 전국구 중고거래", "후루츠패밀리 - 빈티지, 세컨핸드 패션 중고거래 앱", "Just a moment...", "로그인해주세요"] {
+            XCTAssertThrowsError(try ListingMetadataTitle.productName(title, platform: "헬로마켓"))
+        }
+    }
+    func testMarketplaceMetadataRemovesOnlyMatchingSiteSuffix() throws {
+        for platform in ["헬로마켓", "후루츠패밀리"] {
+            XCTAssertEqual(try ListingMetadataTitle.productName("  나이키 반팔티 | \(platform)  ", platform: platform), "나이키 반팔티")
+        }
+        XCTAssertEqual(try ListingMetadataTitle.productName("후루츠패밀리 구매 토트백", platform: "후루츠패밀리"), "후루츠패밀리 구매 토트백")
+        XCTAssertEqual(try ListingMetadataTitle.productName("선반 | 2단", platform: "헬로마켓"), "선반 | 2단")
+        XCTAssertEqual(try ListingMetadataTitle.productName(String(repeating: "가", count: 120), platform: "헬로마켓").count, 100)
+    }
     func testListingAutofillsTitleWithoutAssumingQuantityOrPackaging() {
         var request = ShipmentDraft()
         var fill = ListingAutofill()

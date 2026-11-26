@@ -4,7 +4,9 @@ function normalizeLink(input) {
   let u;
   try { u = new URL(matches[0].replace(/[)\],.]+$/, '')); } catch { throw new Error('링크 형식을 확인해주세요.'); }
   if (u.protocol !== 'https:' || u.username || u.password || u.port) throw new Error('공식 HTTPS 거래글 링크가 필요해요.');
-  const host = u.hostname.toLowerCase(), path = u.pathname;
+  const host = u.hostname.toLowerCase();
+  let path;
+  try { path = decodeURIComponent(u.pathname); } catch { throw new Error('링크 형식을 확인해주세요.'); }
   let platform = '';
   if (['daangn.com', 'www.daangn.com'].includes(host) && (/^\/articles\/\d+\/?$/.test(path) || /^\/kr\/buy-sell\/(?!all\/?$|s\/?$)[^/]+\/?$/.test(path))) {
     platform = '당근'; u.hostname = 'www.daangn.com';
@@ -14,7 +16,11 @@ function normalizeLink(input) {
     platform = '번개장터';
   } else if (['joongna.com', 'web.joongna.com'].includes(host) && /^\/product\/\d+\/?$/.test(path)) {
     platform = '중고나라'; u.hostname = 'web.joongna.com';
-  } else throw new Error('당근·번개장터·중고나라의 공개 상품 페이지 링크를 넣어주세요. 앱 전용·카페 링크는 원문을 열고 내용을 복사해 사용할 수 있어요.');
+  } else if (['hellomarket.com', 'www.hellomarket.com'].includes(host) && /^\/item\/\d+\/?$/.test(path)) {
+    platform = '헬로마켓'; u.hostname = 'www.hellomarket.com';
+  } else if (['fruitsfamily.com', 'www.fruitsfamily.com', 'production.fruitsfamily.com'].includes(host) && /^\/product\/[A-Za-z0-9]+(?:\/[^/]+)?\/?$/.test(path)) {
+    platform = '후루츠패밀리'; u.hostname = 'fruitsfamily.com';
+  } else throw new Error('지원하는 중고거래 사이트의 상품 링크를 넣어주세요. 홈·검색·부동산·카페 주소는 사용할 수 없어요.');
   u.hash = ''; u.search = '';
   return { url: u.href, platform };
 }
@@ -49,7 +55,7 @@ function parseSharedText(input) {
   const text = String(input || '').trim().slice(0, 5000);
   const withoutLinks = text.replace(/https?:\/\/\S+/g, '').trim();
   const lines = withoutLinks.split(/\n/).map(s => s.trim()).filter(Boolean);
-  const title = (lines.find(s => !/^(?:당근에서|번개장터에서|중고나라에서|https?:|가격\s*[:：]|[\d,]+\s*원|가로\s*\d)/.test(s)) || '').replace(/^(?:물품명|상품명|제목)\s*[:：]\s*/, '').slice(0, 70);
+  const title = (lines.find(s => !/^(?:당근에서|번개장터에서|중고나라에서|헬로마켓에서|후루츠패밀리에서|https?:|가격\s*[:：]|[\d,]+\s*원|가로\s*\d)/.test(s)) || '').replace(/^(?:물품명|상품명|제목)\s*[:：]\s*/, '').slice(0, 70);
   const description = lines.filter(line => line.replace(/^(?:물품명|상품명|제목)\s*[:：]\s*/, '').slice(0, 70) !== title && !/^(?:가격|판매가|금액)\s*[:：]|^[\d,]+\s*원\s*$/.test(line)).join('\n').slice(0, 2000);
   return { title, dimensions: dimensionsFromText(withoutLinks), source: 'pasted', description, image: '' };
 }

@@ -4,8 +4,41 @@ const vm = require('node:vm');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const root = join(__dirname,'../Deulgo/Resources');
-const context = vm.createContext({});
+const context = vm.createContext({URL});
 for (const file of ['vehicle-models.js','listing-rules.js','fit-rules.js']) vm.runInContext(readFileSync(join(root,file),'utf8'),context);
+test('all five marketplaces accept product links and remove tracking',()=>{
+  for(const [input,platform,host] of [
+    ['https://www.daangn.com/articles/1295039589?share=true','당근','www.daangn.com'],
+    ['https://go.bgzt.link/hio9lhf','번개장터','go.bgzt.link'],
+    ['https://joongna.com/product/12345','중고나라','web.joongna.com'],
+    ['https://www.hellomarket.com/item/185286509?listType=recomm_item','헬로마켓','www.hellomarket.com'],
+    ['https://fruitsfamily.com/product/6ki7m/나이키-반팔티?share=true#details','후루츠패밀리','fruitsfamily.com'],
+    ['https://production.fruitsfamily.com/product/70hv3/휴무-및-상품-발송-안내','후루츠패밀리','fruitsfamily.com']
+  ]){
+    const link=context.normalizeLink(input), url=new URL(link.url);
+    assert.equal(link.platform,platform); assert.equal(url.hostname,host);
+    assert.equal(url.search,''); assert.equal(url.hash,'');
+  }
+});
+test('marketplace links exclude non-products, impersonation and unsafe URLs',()=>{
+  for(const input of [
+    'https://www.charan.style/item/5299705',
+    'https://www.hellomarket.com/search','https://www.hellomarket.com/item/undefined',
+    'https://fruitsfamily.com/brand/Nike','https://fruitsfamily.com/product/','https://fruitsfamily.com/product/6ki7m/name/extra',
+    'https://www.hellomarket.com.evil.test/item/185286509','https://evil.hellomarket.com/item/185286509',
+    'https://fruitsfamily.com@evil.test/product/6ki7m/nike','https://user:pass@www.hellomarket.com/item/185286509',
+    'https://www.hellomarket.com:8443/item/185286509','http://fruitsfamily.com/product/6ki7m/nike',
+    'https://fruitsfamily.com/product/6ki7m/nike https://www.hellomarket.com/item/185286509',
+    'https://realty.daangn.com/articles/5152225','https://www.daangn.com.evil.test/articles/1'
+  ]) assert.throws(()=>context.normalizeLink(input),undefined,input);
+});
+test('new marketplace share introductions do not replace the product name',()=>{
+  for(const platform of ['헬로마켓','후루츠패밀리']){
+    const preview=context.parseSharedText(`${platform}에서 상품을 확인해보세요!\n상품명: 나이키 반팔티\n30,000원`);
+    assert.equal(preview.title,'나이키 반팔티'); assert(!preview.description.includes('30,000'));
+    assert.equal(preview.dimensions,null);
+  }
+});
 test('native rules have no DOM dependency and match Hangul initials',()=>{
   assert(context.nativeVehicleModels('car','ㅆㄴㅌ',[]).some(v=>v.name==='쏘나타'));
   assert(context.nativeVehicleModels('car','소나타',[]).some(v=>v.name==='쏘나타'));
