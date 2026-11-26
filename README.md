@@ -2,7 +2,9 @@
 
 물건을 보내는 사람과 가는 길에 운반하는 사람을 위한 SwiftUI 앱의 첫 통합 구현이다. iPhone부터 완성하고 Android는 그다음 진행한다.
 
-현재는 **소스 구현 및 일부 규칙 검사 완료 / iPhone 빌드·설치 확인 전**이다. 실제 이용자 간 배차·결제 서비스는 아직 아니다.
+현재는 **iPhone 기기용 빌드 성공 · XCTest 21개 및 규칙 검사 6개 통과 · 시뮬레이터 홈 화면 실행 확인** 상태다. 실제 iPhone 설치와 외부 내비 앱 목적지 전달은 아직 확인 전이며, 실제 이용자 간 배차·결제 서비스는 아직 아니다.
+
+[성공한 빌드와 산출물](https://github.com/changjin123123/deulgo-ios/actions/runs/45829216846) · [Windows에서 iPhone 테스트 설치](INSTALL.md) · [검증 범위](VALIDATION.md)
 
 ## 이번 구현
 
@@ -51,7 +53,7 @@
 - `ListingImport.swift`: 상품 링크 검증·공개 미리보기
 - `ReferenceData.swift`, `Resources/`: 기존 순수 규칙과 차량 참고 자료
 - `Navigation*.swift`, `ExternalNavigation.swift`, `PlaceSearch.swift`: 목적지와 내비 연결
-- `DeulgoTests/`: XCTest 21개 (현재 미실행)
+- `DeulgoTests/`: XCTest 21개 (실행 통과)
 - `scripts/test_rules.cjs`: 실제 번들 규칙을 DOM 없는 JavaScript 환경에서 검증
 
 차량 카탈로그는 기존 시제품 자료를 복사한 것으로 이번 작업에서 개별 제원을 재조사하지 않았다. 미확보값은 그대로 유지하며 판본·좌석 상태·시장 차이를 숨기지 않는다. 현재 물품 요청은 같은 크기 물품 1종, 수량 1~10개다. 기존 웹의 여러 종류/분해 조각 입력은 후속 이식 항목이다.
@@ -67,7 +69,7 @@ xcodebuild test -project Deulgo.xcodeproj -scheme Deulgo \
   -destination 'platform=iOS Simulator,name=<설치된 iPhone 시뮬레이터 이름>'
 ```
 
-`.github/workflows/ios-check.yml`은 수동 실행용이다. XCTest 후 unsigned IPA를 만든다. unsigned IPA는 서명/재서명 후 설치해야 하며 그대로 설치되는 파일은 아니다. 실행 결과가 성공하기 전에는 빌드 완료라고 볼 수 없다.
+`.github/workflows/ios-check.yml`은 수동 실행용이다. XCTest 결과 개수 확인, 시뮬레이터 앱 실행·캡처, 기기용 Release 빌드 후 unsigned IPA를 만든다. 2026-11-26 실행 #3이 성공했다. unsigned IPA는 서명/재서명 후 설치해야 하며 그대로 설치되는 파일은 아니다. GitHub Actions 산출물 보관 기간은 7일이다.
 
 `Config/Local.xcconfig.example`을 `Config/Local.xcconfig`로 복사해 Apple 팀·확정 번들 ID·카카오 Native app key를 설정한다. 임시 번들 ID는 `com.deulgo.delivery`이며 등록·소유권 확인을 의미하지 않는다. 실제 설치 번들 ID와 카카오 iOS 설정값은 일치해야 한다. REST API/Admin 키는 앱에 넣지 않는다.
 
@@ -77,11 +79,10 @@ xcodebuild test -project Deulgo.xcodeproj -scheme Deulgo \
 
 ## 다음 완료 조건
 
-1. iPhone 빌드와 XCTest를 실제 실행하고 컴파일·실행 오류 수정.
-2. 작은 화면·큰 글자·다크 모드·VoiceOver, 요청 저장과 복원 실기기 확인.
-3. 당근·번개장터·중고나라 공개 링크, 차단/앱 전용 링크의 실패 안내 확인.
-4. 카카오 등록 후 두 내비 앱 설치/미설치 및 목적지 전달 확인.
-5. 계정·서버 주문·배차·결제·자격/보험 절차를 단계적으로 연결.
+1. 실제 iPhone에 서명 설치하고 작은 화면·큰 글자·다크 모드·VoiceOver, 요청 저장과 복원 확인.
+2. 당근·번개장터·중고나라 공개 링크, 차단/앱 전용 링크의 실패 안내 확인.
+3. 카카오 등록 후 두 내비 앱 설치/미설치 및 목적지 전달 확인.
+4. 계정·서버 주문·배차·결제·자격/보험 절차를 단계적으로 연결.
 
 ## 공식 문서
 
