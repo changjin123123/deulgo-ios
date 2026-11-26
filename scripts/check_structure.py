@@ -60,7 +60,7 @@ def check_group(group_id, base):
             assert (base / child['path']).exists(), base / child['path']
 check_group(objects[project['rootObject']]['mainGroup'], root)
 swift_refs = {obj['path'] for obj in objects.values() if obj.get('lastKnownFileType') == 'sourcecode.swift'}
-assert swift_refs == {p.name for folder in ['Deulgo', 'DeulgoTests'] for p in (root / folder).glob('*.swift')}
+assert swift_refs == {p.name for folder in ['Deulgo', 'DeulgoTests', 'DeulgoUITests'] for p in (root / folder).glob('*.swift')}
 plist = plistlib.loads((root / 'Deulgo/Info.plist').read_bytes())
 assert set(plist['LSApplicationQueriesSchemes']) == {'nmap', 'kakaonavi-sdk'}
 assert plist['KakaoNativeAppKey'] == '$(KAKAO_NATIVE_APP_KEY)'
@@ -71,7 +71,7 @@ for ref in scheme.findall('.//BuildableReference'):
     assert ref.attrib['BlueprintIdentifier'] in objects
 if '--for-package' in sys.argv:
     assert not (root / 'Config/Local.xcconfig').exists(), 'Do not package local settings'
-test_count = sum(len(re.findall(r'func test\w+\(', p.read_text())) for p in (root / 'DeulgoTests').glob('*.swift'))
+test_count = sum(len(re.findall(r'func test\w+\(', p.read_text())) for folder in ['DeulgoTests', 'DeulgoUITests'] for p in (root / folder).glob('*.swift'))
 resource_names = {obj['path'] for obj in objects.values() if obj.get('lastKnownFileType') in {'text.json', 'sourcecode.javascript'}}
 assert resource_names == {p.name for p in (root/'Deulgo/Resources').glob('*')}
 print(f'PASS: OpenStep project parsed; {len(objects)} objects and source references valid.')

@@ -18,7 +18,10 @@ struct ShipmentEditor: View {
     @State private var autofill = ListingAutofill()
     @State private var autofillNotice: String?
     @State private var message: AppMessage?
+    @State private var keyboardVisible = false
+    @FocusState private var focusedInput: ItemInput?
     @StateObject private var importer = ListingImporter()
+    private enum ItemInput: Hashable { case link, item, pasted }
     private let editing: Bool
     private let onSaved: () -> Void
 
@@ -30,24 +33,11 @@ struct ShipmentEditor: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    HStack(spacing: 8) {
-                        ForEach(Array(["물품", "주소", "확인"].enumerated()), id: \.offset) { index, title in
-                            Label(title, systemImage: index < step ? "checkmark.circle.fill" : "\(index + 1).circle.fill")
-                                .font(.subheadline.weight(.semibold)).foregroundStyle(index <= step ? DeulgoStyle.green : .secondary)
-                            if index < 2 { Spacer(); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary); Spacer() }
-                        }
-                    }.padding(.vertical, 6)
-                }
-                if step == 0 { itemSections }
-                if step == 1 { addressSections }
-                if step == 2 { reviewSections }
-            }
+            editorContent
             .navigationTitle(editing ? "요청 수정" : "물건 보내기")
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
-                VStack(spacing: 8) {
+                if !keyboardVisible { VStack(spacing: 8) {
                     HStack(spacing: 12) {
                         if step > 0 { Button("이전") { step -= 1 }.padding(.horizontal, 12) }
                         if step == 2 {
@@ -55,18 +45,26 @@ struct ShipmentEditor: View {
                             PrimaryAction(title: "운반 요청 올리기", icon: "paperplane", action: {})
                                 .disabled(true).opacity(0.45)
                                 .accessibilityHint("운반자에게 요청을 공개하는 기능은 준비 중이에요")
-                        } else { PrimaryAction(title: "다음", action: advance) }
+                        } else { PrimaryAction(title: "다음", action: advance).accessibilityIdentifier("shipment.next") }
                     }
                     if step == 2 {
                         Text("운반자 공개 준비 중 · 아직 요청이 올라가지 않아요").font(.caption).foregroundStyle(.secondary)
                         Button(editing ? "임시 보관 내용 수정" : "작성 내용 임시 보관", action: keepDraft).font(.subheadline)
                     }
-                }.padding(.horizontal, 20).padding(.vertical, 10).background(.regularMaterial)
+                }.padding(.horizontal, 20).padding(.vertical, 10).background(.regularMaterial) }
             }
             .toolbar {
                 if editing { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
-                ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("입력 완료") { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) } }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if keyboardVisible {
+                        Button(action: dismissKeyboard) { Image(systemName: "keyboard.chevron.compact.down").frame(minWidth: 44, minHeight: 44) }
+                            .accessibilityLabel("키보드 닫기").accessibilityIdentifier("shipment.dismissKeyboard")
+                    }
+                }
             }
+            .toolbar(keyboardVisible ? .hidden : .visible, for: .tabBar)
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboardVisible = true }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in keyboardVisible = false }
             .appMessage($message)
             .task(id: draft.link) {
                 let input = draft.link
@@ -76,23 +74,75 @@ struct ShipmentEditor: View {
                 await importer.load(input)
             }
             .onChange(of: importer.preview?.id) { _, id in if id != nil { applyPreview() } }
-            .onDisappear { importer.reset() }
+            .onDisappear { importer.reset(); dismissKeyboard(); keyboardVisible = false }
         }
     }
 
+    @ViewBuilder private var editorContent: some View {
+        if step == 0 {
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        progressHeader.padding(.top, 22).padding(.bottom, 36)
+                        itemSections
+                        Color.clear.frame(minHeight: 50).contentShape(Rectangle()).onTapGesture(perform: dismissKeyboard)
+                    }
+                    .padding(.horizontal, 24)
+                    .frame(minHeight: geometry.size.height, alignment: .top)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .background { Color(.systemBackground).contentShape(Rectangle()).onTapGesture(perform: dismissKeyboard) }
+                .accessibilityIdentifier("shipment.itemScroll")
+            }
+        } else {
+            Form {
+                Section { progressHeader }
+                if step == 1 { addressSections }
+                if step == 2 { reviewSections }
+            }.scrollDismissesKeyboard(.interactively)
+        }
+    }
+
+    private var progressHeader: some View {
+        HStack(spacing: 14) {
+            Spacer()
+            ForEach(Array(["물품", "주소", "확인"].enumerated()), id: \.offset) { index, title in
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(index <= step ? DeulgoStyle.green : .secondary)
+                if index < 2 { Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary) }
+            }
+            Spacer()
+        }.padding(.vertical, 6).contentShape(Rectangle()).onTapGesture(perform: dismissKeyboard)
+    }
+
     @ViewBuilder private var itemSections: some View {
-        Section("중고거래 링크 · 선택") {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("중고거래 링크").font(.title3.weight(.semibold))
+                Text("· 선택").font(.subheadline).foregroundStyle(.secondary)
+            }.padding(.bottom, 4).onTapGesture(perform: dismissKeyboard)
             TextField("당근·번개장터·중고나라 링크", text: Binding(get: { draft.link }, set: changeLink), axis: .vertical)
                 .lineLimit(1...2).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
-            Text("링크를 붙여넣으면 물품명을 자동으로 채워요.").font(.caption).foregroundStyle(.secondary)
-            Text("일반 물품은 링크 없이 아래에 직접 입력해주세요.").font(.caption).foregroundStyle(.secondary)
+                .focused($focusedInput, equals: .link)
+                .padding(.horizontal, 14).padding(.vertical, 16).frame(minHeight: 54)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(focusedInput == .link ? DeulgoStyle.green : Color(.separator), lineWidth: 1))
+                .accessibilityLabel("중고거래 링크").accessibilityIdentifier("shipment.link")
+            Text("링크를 넣으면 물품명이 자동 입력돼요.").font(.footnote).foregroundStyle(.secondary)
+                .onTapGesture(perform: dismissKeyboard)
             if importer.busy {
-                HStack { Text("물품 정보 불러오는 중…"); Spacer(); ProgressView() }
-            } else if !draft.link.isEmpty {
-                Button("정보 다시 불러오기") { Task { await importer.load(draft.link) } }
+                HStack { Text("물품 정보 불러오는 중…"); Spacer(); ProgressView() }.font(.footnote)
             }
-            if let link = try? ListingLink.parse(draft.link) { Link("\(link.platform) 원문 열기", destination: link.url) }
-            if let error = importer.error { Text(error).font(.caption).foregroundStyle(.secondary) }
+            if let error = importer.error {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(error).font(.footnote).foregroundStyle(.secondary)
+                    if (try? ListingLink.parse(draft.link)) != nil {
+                        Button("정보 다시 불러오기") { Task { await importer.load(draft.link) } }.font(.subheadline)
+                    }
+                    DisclosureGroup("내용을 복사해서 입력하기") {
+                        TextField("상품명과 필요한 설명", text: $pasted, axis: .vertical).lineLimit(3...6).focused($focusedInput, equals: .pasted)
+                        Button("붙여넣은 내용 확인") { importer.usePasted(pasted); dismissKeyboard() }.disabled(pasted.isEmpty)
+                    }.font(.subheadline)
+                }.padding(.top, 4)
+            }
             if let preview = importer.preview {
                 HStack(alignment: .top, spacing: 12) {
                     Group {
@@ -101,6 +151,7 @@ struct ShipmentEditor: View {
                     }.frame(width: 60, height: 60).background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12))
                     Text(preview.title).font(.subheadline.weight(.semibold)).lineLimit(2)
                 }
+                if let link = try? ListingLink.parse(draft.link) { Link("\(link.platform) 원문 열기", destination: link.url).font(.footnote) }
                 if !preview.description.isEmpty {
                     DisclosureGroup("상품 설명 보기") { Text(preview.description).font(.caption).foregroundStyle(.secondary) }
                 }
@@ -109,16 +160,19 @@ struct ShipmentEditor: View {
                 }
             }
             if let autofillNotice { Text(autofillNotice).font(.caption).foregroundStyle(.secondary) }
-            DisclosureGroup("불러오기 어려우면 내용 붙여넣기") {
-                TextField("상품명과 필요한 설명을 붙여넣어주세요", text: $pasted, axis: .vertical).lineLimit(3...6)
-                Button("붙여넣은 내용 확인") { importer.usePasted(pasted) }.disabled(pasted.isEmpty)
-            }
         }
-        Section {
-            TextField("예: 접이식 테이블", text: $draft.item).accessibilityLabel("물품 이름")
-        } header: { Text("무엇을 보내나요?") }
-        Section {
-            DisclosureGroup("물품 상세 · 알고 있으면", isExpanded: $showItemDetails) {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("무엇을 보낼까요?").font(.title2.bold()).onTapGesture(perform: dismissKeyboard)
+            Text("링크가 없으면 물품명을 직접 적어주세요.").font(.footnote).foregroundStyle(.secondary).onTapGesture(perform: dismissKeyboard)
+            TextField("예: 접이식 테이블", text: $draft.item)
+                .focused($focusedInput, equals: .item).submitLabel(.done).onSubmit(dismissKeyboard)
+                .font(.body).padding(.vertical, 16)
+                .overlay(alignment: .bottom) { Rectangle().fill(Color(.separator)).frame(height: 1) }
+                .accessibilityLabel("물품 이름").accessibilityIdentifier("shipment.item")
+        }.padding(.top, 44)
+        VStack(alignment: .leading, spacing: 12) {
+            DisclosureGroup(isExpanded: $showItemDetails) {
+                VStack(alignment: .leading, spacing: 16) {
                 Picker("포장 상태", selection: Binding(get: { draft.packagingDisplay }, set: { draft.packaging = $0 })) {
                     ForEach(["확인 필요", "포장할 예정이에요", "포장했어요", "그대로 운반해요", "분해했어요"], id: \.self) { Text($0) }
                 }
@@ -128,8 +182,12 @@ struct ShipmentEditor: View {
                 OptionalNumberField(title: "전체 무게", unit: "kg", value: $draft.weightKg)
                 Picker("운반 방향", selection: $draft.orientation) { ForEach(ItemOrientation.allCases) { Text($0.title).tag($0) } }
                 Text("알고 있는 정보만 입력해주세요. 다른 사람의 물건이라면 물건을 건네줄 분에게 확인해주세요.").font(.caption).foregroundStyle(.secondary)
+                Text("여러 물품은 물품명이나 요청 메모에 적어주세요. 구성·수량·포장·크기는 운반 전에 확인해야 해요.").font(.caption).foregroundStyle(.secondary)
+                }.padding(.top, 16)
+            } label: {
+                Text("물품 상세").font(.headline) + Text(" · 선택").font(.subheadline).foregroundColor(.secondary)
             }
-        } footer: { Text("여러 물품을 함께 보낸다면 물품명이나 요청 메모에 적어주세요. 구성·수량·포장·크기는 운반 전에 확인해야 해요.") }
+        }.padding(.top, 36).padding(.bottom, 24)
     }
 
     @ViewBuilder private var addressSections: some View {
@@ -191,7 +249,12 @@ struct ShipmentEditor: View {
         do { try store.save(draft); onSaved(); if editing { dismiss() } }
         catch { message = AppMessage(title: "임시 보관하지 못했어요", text: error.localizedDescription) }
     }
+    private func dismissKeyboard() {
+        focusedInput = nil
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
     private func advance() {
+        dismissKeyboard()
         do {
             if step == 0 {
                 guard !draft.item.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw AppInputError("물품 이름을 입력해주세요.") }

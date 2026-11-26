@@ -24,24 +24,33 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Image(systemName: "shippingbox.fill").font(.system(size: 40)).foregroundStyle(DeulgoStyle.green)
-                        Text("보내고 싶은 물건,\n가는 김에 들고.").font(.largeTitle.bold()).foregroundStyle(Color(red: 0.10, green: 0.23, blue: 0.18))
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("물건 보내기", systemImage: "shippingbox.fill").font(.subheadline.weight(.semibold)).foregroundStyle(DeulgoStyle.green)
+                        Text("보내고 싶은 물건,\n가는 김에 들고.").font(.title2.bold()).foregroundStyle(Color(red: 0.10, green: 0.23, blue: 0.18))
                         Text("중고거래 물품도, 일상에서 보낼 물건도.")
                             .font(.subheadline).foregroundStyle(Color(red: 0.27, green: 0.36, blue: 0.29))
-                        PrimaryAction(title: "물건 보내기", icon: "shippingbox") { tab = .send }
-                    }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-                        .background(DeulgoStyle.cream, in: RoundedRectangle(cornerRadius: 26))
-                    Button { tab = .carry } label: {
-                        HStack(spacing: 16) {
-                            Image(systemName: "car.fill").font(.title2)
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("가는 김에 운반하기").font(.headline)
-                                Text("운반 요청을 둘러보고 내 차량을 준비해요").font(.subheadline).foregroundStyle(.secondary)
+                        PrimaryAction(title: "물건 보내기", icon: "shippingbox") { tab = .send }.accessibilityIdentifier("home.send")
+                    }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(DeulgoStyle.cream, in: RoundedRectangle(cornerRadius: 22))
+                    VStack(alignment: .leading, spacing: 14) {
+                        Label("가는 김에 · 장거리 운반", systemImage: "car.side").font(.subheadline.weight(.semibold)).foregroundStyle(DeulgoStyle.green)
+                        Text("다른 지역으로 가시나요?").font(.title2.bold())
+                        Text("이동하는 길에 함께 들고 갈 물건을 찾아보세요.").font(.subheadline).foregroundStyle(.secondary)
+                        NavigationLink { TransportRequestBoardView() } label: {
+                            HStack {
+                                Text("운반 요청 둘러보기").fontWeight(.semibold)
+                                Spacer(); Image(systemName: "arrow.right")
                             }
-                            Spacer(); Image(systemName: "chevron.right")
-                        }.padding(20).background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
-                    }.buttonStyle(.plain)
+                            .padding(16).foregroundStyle(DeulgoStyle.green)
+                            .background(DeulgoStyle.green.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+                        }.buttonStyle(.plain).accessibilityIdentifier("home.requestBoard")
+                        HStack {
+                            Text("공개 요청 연결 준비 중").font(.caption).foregroundStyle(.secondary)
+                            Spacer()
+                            Button("내 운반수단") { tab = .carry }.font(.caption.weight(.medium))
+                        }
+                    }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22))
                     HStack {
                         Text("임시 보관한 요청").font(.headline)
                         Spacer()
