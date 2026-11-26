@@ -4,7 +4,7 @@
 
 ## Windows에서 설치
 
-1. 이 저장소의 Actions에서 성공한 `iPhone build and tests` 실행을 연다.
+1. 이 저장소의 Actions에서 성공한 `iPhone build and tests` 실행을 연다. 새 빌드를 실행하면 `ios-release` 환경 승인이 필요하다. 본인 계정으로 `Review deployments`에서 실행 커밋을 확인하고 승인한다.
 2. `Deulgo-iPhone-unsigned` 산출물을 내려받고 ZIP을 풀어 `Deulgo-unsigned.ipa`를 준비한다. `.ipa` 자체는 풀지 않는다.
 3. [Sideloadly 공식 사이트](https://sideloadly.io/)의 Windows 버전을 사용한다. 이미 설치되어 있다면 같은 프로그램을 사용할 수 있다. 기기 인식에 필요한 iTunes·iCloud 구성은 공식 안내를 따른다.
 4. iPhone을 USB로 연결하고, 본인 컴퓨터인지 확인한 뒤 기기에서 신뢰한다. Sideloadly에서 연결된 iPhone과 들고 IPA를 선택한다.
@@ -23,6 +23,6 @@
 - 차량 모델을 초성으로 찾고, 연식 `몰라요`와 적재 방식으로 저장해 본다.
 - 긴 거래글을 불러왔을 때 설명이 접혀 있는지 확인한다. 조회가 막힌 글은 내용 복사 또는 직접 입력을 사용한다.
 - 주소 검색 결과를 지도에서 확인한 뒤 네이버지도에 목적지가 정확히 전달되는지 확인한다. 실기기 내비 연결은 시뮬레이터 검사와 별개다.
-- 카카오내비는 카카오 개발자 앱 등록과 Native app key 설정 후 다시 빌드해야 한다. 키가 없는 이번 설정에서는 준비 안내가 표시된다.
+- 0.1.0에는 카카오 키가 없어 준비 안내가 표시된다. 카카오 앱·iOS 설정과 보호된 환경 비밀값 등록은 완료했으며, 키가 반영된 새 빌드가 성공한 뒤 실제 연결을 확인한다. Sideloadly에서 설치 번들 ID를 바꿨다면 카카오에 등록한 ID와 일치시키는 작업이 필요하다.
 
 참고: [Apple 개발자 모드 안내](https://developer.apple.com/documentation/xcode/enabling-developer-mode-on-a-device).
