@@ -63,7 +63,7 @@ final class RequestValidationTests: XCTestCase {
         XCTAssertEqual(request.item, "의자 세트")
         XCTAssertEqual(request.dimensions, preview.dimensions)
         XCTAssertNil(request.count)
-        XCTAssertEqual(request.packaging, "판매자 확인 필요")
+        XCTAssertEqual(request.packaging, "확인 필요")
         XCTAssertEqual(request.orientation, .unknown)
     }
     func testAutofillPreservesEditsAndClearsOnlyOldImportedValues() {
@@ -97,6 +97,9 @@ final class RequestValidationTests: XCTestCase {
         oldRequest.count = 3; oldRequest.orientation = .upright; oldRequest.packaging = "포장했어요"
         let existing = try JSONDecoder().decode(ShipmentDraft.self, from: JSONEncoder().encode(oldRequest))
         XCTAssertEqual(existing, oldRequest)
+        oldRequest.packaging = "판매자 확인 필요"
+        let legacyUnknown = try JSONDecoder().decode(ShipmentDraft.self, from: JSONEncoder().encode(oldRequest))
+        XCTAssertEqual(legacyUnknown.packagingDisplay, "확인 필요")
         var withoutCount = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(ShipmentDraft())) as? [String: Any])
         withoutCount.removeValue(forKey: "count")
         let unknown = try JSONDecoder().decode(ShipmentDraft.self, from: JSONSerialization.data(withJSONObject: withoutCount))

@@ -10,7 +10,7 @@ enum ItemOrientation: String, Codable, CaseIterable, Identifiable {
     case unknown, any, upright, fixed
     var id: Self { self }
     var title: String {
-        switch self { case .unknown: return "판매자 확인 필요"; case .any: return "눕혀도 돼요"; case .upright: return "세워서 운반해요"; case .fixed: return "현재 방향 그대로" }
+        switch self { case .unknown: return "확인 필요"; case .any: return "눕혀도 돼요"; case .upright: return "세워서 운반해요"; case .fixed: return "현재 방향 그대로" }
     }
 }
 
@@ -45,7 +45,8 @@ struct ShipmentDraft: Codable, Identifiable, Equatable {
     var dimensions = ItemDimensions()
     var weightKg: Double?
     var orientation: ItemOrientation = .unknown
-    var packaging = "판매자 확인 필요"
+    var packaging = "확인 필요"
+    var packagingDisplay: String { packaging == "판매자 확인 필요" ? "확인 필요" : packaging }
     var pickup = DeliveryAddress()
     var dropoff = DeliveryAddress()
     var arrival: ArrivalPreference = .flexible
@@ -59,7 +60,7 @@ struct ShipmentDraft: Codable, Identifiable, Equatable {
         guard !item.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw AppInputError("물품 이름을 입력해주세요.") }
         if let count, !(1...10).contains(count) { throw AppInputError("물품 수량을 확인해주세요.") }
         if requirePickup && pickup.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            throw AppInputError("판매자에게 픽업 주소를 확인해주세요.")
+            throw AppInputError("물건 있는 곳의 픽업 주소를 확인해주세요.")
         }
         guard !dropoff.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw AppInputError("받을 곳의 주소를 입력해주세요.") }
         for n in [dimensions.width, dimensions.depth, dimensions.height] {

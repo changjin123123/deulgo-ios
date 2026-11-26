@@ -37,11 +37,11 @@ struct RequestDetailView: View {
                     Text(request.item).font(.title2.bold())
                     LabeledContent("상태", value: "임시 보관 · 아직 게시되지 않음")
                     if let count = request.count { LabeledContent("기존 입력 수량", value: "\(count)개") }
-                    else { Text("물품 구성·수량은 판매자 확인 필요").font(.caption).foregroundStyle(.secondary) }
-                    Text(request.packaging).font(.subheadline)
+                    else { Text("물품 구성·수량 확인 필요").font(.caption).foregroundStyle(.secondary) }
+                    Text(request.packagingDisplay).font(.subheadline)
                 }
                 Section("이동 구간") {
-                    AddressSummary(title: "픽업지", address: request.pickup, emptyText: "판매자에게 주소 확인 필요")
+                    AddressSummary(title: "픽업지", address: request.pickup, emptyText: "픽업 주소 확인 필요")
                     AddressSummary(title: "도착지", address: request.dropoff)
                     LabeledContent("희망 시간", value: request.arrival == .scheduled ? request.desiredAt.formatted(date: .abbreviated, time: .shortened) : request.arrival.title)
                     Button { navigating = request } label: { Label("길 안내", systemImage: "arrow.triangle.turn.up.right.diamond") }

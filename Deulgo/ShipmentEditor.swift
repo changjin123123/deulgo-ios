@@ -85,6 +85,7 @@ struct ShipmentEditor: View {
             TextField("당근·번개장터·중고나라 링크", text: Binding(get: { draft.link }, set: changeLink), axis: .vertical)
                 .lineLimit(1...2).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
             Text("링크를 붙여넣으면 물품명을 자동으로 채워요.").font(.caption).foregroundStyle(.secondary)
+            Text("일반 물품은 링크 없이 아래에 직접 입력해주세요.").font(.caption).foregroundStyle(.secondary)
             if importer.busy {
                 HStack { Text("물품 정보 불러오는 중…"); Spacer(); ProgressView() }
             } else if !draft.link.isEmpty {
@@ -118,17 +119,17 @@ struct ShipmentEditor: View {
         } header: { Text("무엇을 보내나요?") }
         Section {
             DisclosureGroup("물품 상세 · 알고 있으면", isExpanded: $showItemDetails) {
-                Picker("포장 상태", selection: $draft.packaging) {
-                    ForEach(["판매자 확인 필요", "포장할 예정이에요", "포장했어요", "그대로 운반해요", "분해했어요"], id: \.self) { Text($0) }
+                Picker("포장 상태", selection: Binding(get: { draft.packagingDisplay }, set: { draft.packaging = $0 })) {
+                    ForEach(["확인 필요", "포장할 예정이에요", "포장했어요", "그대로 운반해요", "분해했어요"], id: \.self) { Text($0) }
                 }
                 OptionalNumberField(title: "가로", unit: "cm", value: $draft.dimensions.width)
                 OptionalNumberField(title: "깊이", unit: "cm", value: $draft.dimensions.depth)
                 OptionalNumberField(title: "높이", unit: "cm", value: $draft.dimensions.height)
                 OptionalNumberField(title: "전체 무게", unit: "kg", value: $draft.weightKg)
                 Picker("운반 방향", selection: $draft.orientation) { ForEach(ItemOrientation.allCases) { Text($0.title).tag($0) } }
-                Text("판매자에게 확인한 정보만 입력해주세요. 모르는 내용은 그대로 두어도 돼요.").font(.caption).foregroundStyle(.secondary)
+                Text("알고 있는 정보만 입력해주세요. 다른 사람의 물건이라면 물건을 건네줄 분에게 확인해주세요.").font(.caption).foregroundStyle(.secondary)
             }
-        } footer: { Text("거래글 하나에도 여러 물품이 있을 수 있어요. 구성·수량·포장·크기는 운반 전에 판매자에게 확인해야 해요.") }
+        } footer: { Text("여러 물품을 함께 보낸다면 물품명이나 요청 메모에 적어주세요. 구성·수량·포장·크기는 운반 전에 확인해야 해요.") }
     }
 
     @ViewBuilder private var addressSections: some View {
@@ -151,13 +152,13 @@ struct ShipmentEditor: View {
         Section("보낼 물품") {
             LabeledContent("물품", value: draft.item)
             if let count = draft.count { LabeledContent("기존 입력 수량", value: "\(count)개") }
-            else { Text("물품 구성·수량은 판매자 확인 필요").font(.caption).foregroundStyle(.secondary) }
-            LabeledContent("포장", value: draft.packaging)
+            else { Text("물품 구성·수량 확인 필요").font(.caption).foregroundStyle(.secondary) }
+            LabeledContent("포장", value: draft.packagingDisplay)
             LabeledContent("운반 방향", value: draft.orientation.title)
         }
         Section("이동 구간") {
-            AddressSummary(title: "물건 있는 곳 · 픽업지", address: draft.pickup, emptyText: "판매자에게 주소 확인 필요")
-            AddressSummary(title: "내가 받을 곳 · 도착지", address: draft.dropoff)
+            AddressSummary(title: "물건 있는 곳 · 픽업지", address: draft.pickup, emptyText: "픽업 주소 확인 필요")
+            AddressSummary(title: "받는 곳 · 도착지", address: draft.dropoff)
             LabeledContent("희망 시간", value: draft.arrival == .scheduled ? draft.desiredAt.formatted(date: .abbreviated, time: .shortened) : draft.arrival.title)
         }
         Section("운반 조건") {
@@ -168,7 +169,7 @@ struct ShipmentEditor: View {
         Section {
             Text("요청을 올리면 운반자가 내용을 보고 접수하는 방식으로 준비하고 있어요. 현재는 이 아이폰에 임시 보관만 할 수 있어요.").font(.subheadline)
             if draft.pickup.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text("요청을 올리기 전 판매자에게 픽업 주소를 확인해야 해요.").font(.caption).foregroundStyle(.secondary)
+                Text("요청을 올리기 전 물건 있는 곳의 픽업 주소를 확인해야 해요.").font(.caption).foregroundStyle(.secondary)
             }
             Text("배송비는 거리·운반 조건을 확인한 뒤 안내할 예정이에요.").font(.caption).foregroundStyle(.secondary)
         }
@@ -209,9 +210,9 @@ struct AddressFormSection: View {
     @State private var saved = false
     @State private var message: AppMessage?
     var body: some View {
-        Section(stop == .pickup ? "물건 있는 곳 · 픽업지" : "내가 받을 곳 · 도착지") {
+        Section(stop == .pickup ? "물건 있는 곳 · 픽업지" : "받는 곳 · 도착지") {
             if stop == .pickup {
-                Text("판매자에게 확인한 주소를 입력해주세요. 아직 모르면 비워두고 다음으로 갈 수 있어요.").font(.caption).foregroundStyle(.secondary)
+                Text("물건을 가져올 주소를 입력해주세요. 다른 사람의 물건이라면 건네줄 분에게 확인하고, 아직 모르면 나중에 입력할 수 있어요.").font(.caption).foregroundStyle(.secondary)
             }
             Button { search = true } label: { Label(address.line.isEmpty ? "주소 찾기" : "주소 다시 찾기", systemImage: "magnifyingglass") }
             TextField("기본 주소", text: Binding(get: { address.line }, set: { address.editLine($0) }), axis: .vertical).lineLimit(1...3)
@@ -219,7 +220,7 @@ struct AddressFormSection: View {
             if stop == .dropoff { HStack {
                 Button("저장 주소 선택") { saved = true }.disabled(store.data.addresses.isEmpty)
                 Spacer()
-                Button("내 받을 주소 저장") {
+                Button("받는 주소 저장") {
                     do { try store.saveAddress(address, label: "받을 곳"); message = AppMessage(title: "주소 저장", text: "이 아이폰에 받을 주소를 저장했어요.") }
                     catch { message = AppMessage(title: "저장하지 못했어요", text: error.localizedDescription) }
                 }.disabled(address.line.isEmpty)

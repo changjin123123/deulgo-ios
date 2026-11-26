@@ -10,9 +10,19 @@ struct CarrierHomeView: View {
             List {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("가는 길에, 들고.").font(.title2.bold())
-                        Text("내 운반수단과 장비를 먼저 알려주세요.").font(.subheadline).foregroundStyle(.secondary)
+                        Text("가는 김에, 들고.").font(.title2.bold())
+                        Text("운반 요청을 둘러보고, 내 이동에 맞는 요청을 찾아요.").font(.subheadline).foregroundStyle(.secondary)
                     }.padding(.vertical, 10)
+                }
+                Section("운반 요청") {
+                    NavigationLink { TransportRequestBoardView() } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("운반 요청 둘러보기").font(.headline)
+                                Text("중고거래·일반 물품 요청을 한곳에서").font(.caption).foregroundStyle(.secondary)
+                            }.padding(.vertical, 6)
+                        } icon: { Image(systemName: "list.bullet.rectangle") }
+                    }
                 }
                 Section {
                     ForEach(store.data.vehicles) { vehicle in
@@ -34,9 +44,6 @@ struct CarrierHomeView: View {
                     NavigationLink { CargoCatalogView() } label: { Label("차량 적재 용량 참고", systemImage: "shippingbox") }
                     NavigationLink { ComparisonView() } label: { Label("물품과 내 차량 비교", systemImage: "ruler") }
                 }
-                Section("운반 요청") {
-                    ContentUnavailableView("실제 요청 연결 준비 중", systemImage: "tray", description: Text("현재는 차량 등록과 운반 조건 확인까지 사용할 수 있어요."))
-                }
                 Section("운반자 준수사항 · 검토안") {
                     Text("인수한 물품의 고의적인 가로채기·판매·은닉은 금지됩니다. 위반이 확인되면 영구 이용 제한과 손해배상 청구 대상이 되며, 범죄 혐의에 대해서는 수사기관 신고 및 증거 제출을 진행합니다.")
                         .font(.footnote)
@@ -47,6 +54,21 @@ struct CarrierHomeView: View {
                 .sheet(item: $editing) { VehicleEditor(initial: $0) }
                 .appMessage($message)
         }
+    }
+}
+
+struct TransportRequestBoardView: View {
+    var body: some View {
+        List {
+            Section {
+                Text("중고거래 물품과 일반 물품의 운반 요청을 모아보는 곳이에요.").font(.subheadline)
+            }
+            Section {
+                ContentUnavailableView("공개 요청 목록 준비 중", systemImage: "tray", description: Text("다른 이용자의 요청을 불러오고 접수하는 기능은 아직 연결되지 않았어요. 내 임시 보관 요청은 내역에서 볼 수 있어요."))
+            }
+        }
+        .navigationTitle("운반 요청 둘러보기")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

@@ -26,8 +26,8 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 16) {
                         Image(systemName: "shippingbox.fill").font(.system(size: 40)).foregroundStyle(DeulgoStyle.green)
-                        Text("보내고 싶은 물건,\n가는 길에 들고.").font(.largeTitle.bold()).foregroundStyle(Color(red: 0.10, green: 0.23, blue: 0.18))
-                        Text("물건을 보낼 때도, 가는 길에 운반할 때도.")
+                        Text("보내고 싶은 물건,\n가는 김에 들고.").font(.largeTitle.bold()).foregroundStyle(Color(red: 0.10, green: 0.23, blue: 0.18))
+                        Text("중고거래 물품도, 일상에서 보낼 물건도.")
                             .font(.subheadline).foregroundStyle(Color(red: 0.27, green: 0.36, blue: 0.29))
                         PrimaryAction(title: "물건 보내기", icon: "shippingbox") { tab = .send }
                     }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
@@ -36,8 +36,8 @@ struct HomeView: View {
                         HStack(spacing: 16) {
                             Image(systemName: "car.fill").font(.title2)
                             VStack(alignment: .leading, spacing: 5) {
-                                Text("가는 길에 운반하기").font(.headline)
-                                Text("내 차량과 장비부터 등록해요").font(.subheadline).foregroundStyle(.secondary)
+                                Text("가는 김에 운반하기").font(.headline)
+                                Text("운반 요청을 둘러보고 내 차량을 준비해요").font(.subheadline).foregroundStyle(.secondary)
                             }
                             Spacer(); Image(systemName: "chevron.right")
                         }.padding(20).background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
@@ -76,7 +76,7 @@ struct RequestCard: View {
                 Text("임시 보관").font(.caption.weight(.medium)).padding(.horizontal, 9).padding(.vertical, 5)
                     .background(DeulgoStyle.green.opacity(0.10), in: Capsule())
             }
-            Label(request.pickup.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "판매자에게 픽업 주소 확인 필요" : request.pickup.line, systemImage: "circle").lineLimit(1)
+            Label(request.pickup.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "픽업 주소 확인 필요" : request.pickup.line, systemImage: "circle").lineLimit(1)
             Label(request.dropoff.line, systemImage: "mappin").lineLimit(1)
             Text(request.arrival.title).font(.caption).foregroundStyle(.secondary)
         }.font(.subheadline).padding(18).frame(maxWidth: .infinity, alignment: .leading)
