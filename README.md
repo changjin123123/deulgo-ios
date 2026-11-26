@@ -2,9 +2,9 @@
 
 물건을 보내는 사람과 가는 길에 운반하는 사람을 위한 SwiftUI 앱의 첫 통합 구현이다. iPhone부터 완성하고 Android는 그다음 진행한다.
 
-0.1.0은 **iPhone 기기용 빌드 성공 · XCTest 21개 및 규칙 검사 6개 통과 · 시뮬레이터 홈 화면 실행 확인** 상태다. 0.1.1의 보내기 순서 변경과 카카오 키 연결은 소스·설정에 반영했으며 새 빌드는 검증 대기 중이다. 외부 내비 앱의 실제 목적지 전달은 아직 확인 전이며, 실제 이용자 간 배차·결제 서비스는 아직 아니다.
+0.1.1 (2)는 **iPhone 기기용 빌드 성공 · XCTest 21개 및 규칙 검사 6개 통과 · 시뮬레이터 홈 화면 실행 확인** 상태다. 보내기 순서 변경과 보호된 환경의 카카오 키가 새 IPA에 반영됐고, 키 값 출력 없이 설정 포함 검사를 통과했다. 외부 내비 앱의 실제 목적지 전달은 아직 확인 전이며, 실제 이용자 간 배차·결제 서비스는 아직 아니다.
 
-[성공한 빌드와 산출물](https://github.com/changjin123123/deulgo-ios/actions/runs/45829216846) · [Windows에서 iPhone 테스트 설치](INSTALL.md) · [검증 범위](VALIDATION.md)
+[성공한 빌드와 산출물](https://github.com/changjin123123/deulgo-ios/actions/runs/45841591387) · [Windows에서 iPhone 테스트 설치](INSTALL.md) · [검증 범위](VALIDATION.md)
 
 ## 이번 구현
 
@@ -69,7 +69,7 @@ xcodebuild test -project Deulgo.xcodeproj -scheme Deulgo \
   -destination 'platform=iOS Simulator,name=<설치된 iPhone 시뮬레이터 이름>'
 ```
 
-`.github/workflows/ios-check.yml`은 원본 저장소의 `main`에서 수동 실행한다. `ios-release` 환경의 본인 승인 후 XCTest 결과 개수 확인, 시뮬레이터 앱 실행·캡처, 기기용 Release 빌드와 unsigned IPA 생성을 진행한다. 2026-11-26 실행 #3이 성공한 기준판은 0.1.0이다. unsigned IPA는 서명/재서명 후 설치해야 하며 그대로 설치되는 파일은 아니다. GitHub Actions 산출물 보관 기간은 7일이다.
+`.github/workflows/ios-check.yml`은 원본 저장소의 `main`에서 수동 실행한다. `ios-release` 환경의 본인 승인 후 XCTest 결과 개수 확인, 시뮬레이터 앱 실행·캡처, 기기용 Release 빌드와 unsigned IPA 생성을 진행한다. 2026-11-27 00:01 KST에 성공한 실행 #5의 기준판은 0.1.1 (2), 커밋 `69415e4a42310dfe1e55bf5fc4fa338f997befbb`다. unsigned IPA는 서명/재서명 후 설치해야 하며 그대로 설치되는 파일은 아니다. GitHub Actions 산출물 보관 기간은 7일이다.
 
 `Config/Local.xcconfig.example`을 `Config/Local.xcconfig`로 복사해 Apple 팀·확정 번들 ID·카카오 Native app key를 설정한다. 임시 번들 ID는 `com.deulgo.delivery`이며 등록·소유권 확인을 의미하지 않는다. 실제 설치 번들 ID와 카카오 iOS 설정값은 일치해야 한다. REST API/Admin 키는 앱에 넣지 않는다.
 
