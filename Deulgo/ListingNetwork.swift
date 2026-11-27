@@ -70,6 +70,13 @@ enum ListingShortLinkResolver {
             if !current.isShortLink { return current }
             guard visited.insert(current.url.absoluteString).inserted else { throw AppInputError("공유 링크가 반복 이동해요. 상품 페이지 주소를 복사해주세요.") }
             let response = try await fetch(current.url, 64_000)
+            // OneLink can return a 200 launch page to CFNetwork on iOS instead
+            // of an HTTP redirect. Read its explicit web destination as data;
+            // never execute its script or open the external app/store scheme.
+            if response.status == 200, current.url.host == "fruitsfamilyapp.onelink.me",
+               let product = FruitsShareLanding.productLink(from: response.data) {
+                return product
+            }
             guard [301, 302, 303, 307, 308].contains(response.status),
                   let location = response.location,
                   let url = URL(string: location, relativeTo: current.url)?.absoluteURL,
@@ -80,6 +87,28 @@ enum ListingShortLinkResolver {
         }
         if !current.isShortLink { return current }
         throw AppInputError("공유 링크의 이동이 너무 많아요. 상품 페이지 주소를 복사해주세요.")
+    }
+}
+
+enum FruitsShareLanding {
+    static func productLink(from data: Data) -> ListingLink? {
+        guard data.count <= 64_000, let html = String(data: data, encoding: .utf8) else { return nil }
+        // Match one standalone string assignment from the observed OneLink
+        // launch template. Reject expressions, duplicates and arbitrary links.
+        let pattern = #"(?m)^[\t ]*var[\t ]+store_link[\t ]*=[\t ]*(?:"((?:\\.|[^"\\\r\n])*)"|'((?:\\.|[^'\\\r\n])*)')[\t ]*;[\t \r]*$"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let matches = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
+        guard matches.count == 1, let match = matches.first else { return nil }
+        let group = match.range(at: 1).location == NSNotFound ? 2 : 1
+        guard let range = Range(match.range(at: group), in: html) else { return nil }
+        let raw = String(html[range])
+        // OneLink escapes URL separators as JSON-compatible \\u003D/\\u0026.
+        // Single-quoted literals containing double quotes are outside this URL
+        // format; refuse them rather than interpreting JavaScript escapes.
+        guard group == 1 || !raw.contains("\"") else { return nil }
+        guard let value = try? JSONSerialization.jsonObject(with: Data(("\"" + raw + "\"").utf8), options: .fragmentsAllowed) as? String,
+              let link = try? ListingLink.parse(value), link.platform == "후루츠패밀리", !link.isShortLink else { return nil }
+        return link
     }
 }
 

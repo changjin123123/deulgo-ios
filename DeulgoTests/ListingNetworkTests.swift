@@ -59,6 +59,68 @@ final class ListingNetworkTests: XCTestCase {
         }
     }
 
+    func testFruitsIOSLaunchPageResolvesItsEscapedWebDestination() async throws {
+        let link = try ListingLink.parse("https://fruitsfamilyapp.onelink.me/Agm2/example1")
+        // Synthetic values; structure follows OneLink's actual iOS launch page.
+        let fixture = #"""
+        <!DOCTYPE html><title>Launching App...</title>
+        <script>
+        var store_link = 'https://fruitsfamily.com/product/abc12?source_caller\u003Dsdk\u0026deep_link_value\u003Dhttps%3A%2F%2Ffruitsfamily.com%2Fproduct%2Fabc12';
+        var app_link = 'fruitsfamily://mainactivity?deep_link_value=unrelated';
+        var app_icon = 'https://cdnappicons.appsflyer.com/icon.png';
+        </script>
+        """#
+        var calls = 0
+        let product = try await ListingShortLinkResolver.resolve(link) { url, limit in
+            calls += 1
+            XCTAssertEqual(url, link.url)
+            XCTAssertEqual(limit, 64_000)
+            return ListingHTTPResponse(status: 200, location: nil, data: Data(fixture.utf8))
+        }
+        XCTAssertEqual(product.url.absoluteString, "https://fruitsfamily.com/product/abc12")
+        XCTAssertEqual(calls, 1)
+        XCTAssertFalse(product.isShortLink)
+        let doubleQuoted = #"var store_link = "https:\/\/fruitsfamily.com\/product\/abc12";"#
+        XCTAssertEqual(FruitsShareLanding.productLink(from: Data(doubleQuoted.utf8))?.url, product.url)
+    }
+
+    func testFruitsLaunchPageRejectsUnsafeAmbiguousAndExecutableValues() {
+        let invalid = [
+            "var store_link = 'https://evil.test/product/abc12';",
+            "var store_link = 'http://fruitsfamily.com/product/abc12';",
+            "var store_link = 'https://user:pass@fruitsfamily.com/product/abc12';",
+            "var store_link = 'https://www.hellomarket.com/item/123456';",
+            "var store_link = 'https://fruitsfamily.com/';",
+            "var store_link = 'https://fruitsfamilyapp.onelink.me/Agm2/example1';",
+            "var store_link = 'fruitsfamily://mainactivity';",
+            "var store_link = 'https://fruitsfamily.com/product/' + productID;",
+            "var store_link = getDestination();",
+            "var app_link = 'https://fruitsfamily.com/product/abc12';",
+            "var store_link = 'https://fruitsfamily.com/product/abc12';\nvar store_link = 'https://fruitsfamily.com/product/other';",
+            "<title>Launching App...</title>",
+            String(repeating: " ", count: 64_001)
+        ]
+        for html in invalid {
+            XCTAssertNil(FruitsShareLanding.productLink(from: Data(html.utf8)))
+        }
+    }
+
+    func testLaunchHTMLIsNotUsedForDeniedResponsesOrAnotherService() async throws {
+        let body = Data("var store_link = 'https://fruitsfamily.com/product/abc12';".utf8)
+        for (url, status) in [("https://fruitsfamilyapp.onelink.me/Agm2/example1", 403),
+                              ("https://fruitsfamilyapp.onelink.me/Agm2/example1", 429),
+                              ("https://go.bgzt.link/example1", 200)] {
+            var calls = 0
+            do {
+                _ = try await ListingShortLinkResolver.resolve(ListingLink.parse(url)) { _, _ in
+                    calls += 1
+                    return ListingHTTPResponse(status: status, location: nil, data: body)
+                }
+                XCTFail("Accepted untrusted launch response")
+            } catch { XCTAssertEqual(calls, 1) }
+        }
+    }
+
     private func productData(id: Int = 123456, title: String = "테스트 미니 PC", image: String = "https://media.bunjang.co.kr/product/123456_{cnt}_100_w{res}.jpg", hidden: Bool = false) throws -> Data {
         try JSONSerialization.data(withJSONObject: ["data": ["product": ["pid": id, "name": title, "imageUrl": image, "imageCount": 3, "isHidden": hidden, "price": 999000, "qty": 5], "shop": ["name": "상품명이 아닌 상점명"]]])
     }
