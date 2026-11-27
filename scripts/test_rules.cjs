@@ -39,6 +39,18 @@ test('new marketplace share introductions do not replace the product name',()=>{
     assert.equal(preview.dimensions,null);
   }
 });
+test('Fruits app share accepts only its verified host, template and complete code',()=>{
+  const link=context.normalizeLink('https://fruitsfamilyapp.onelink.me/Agm2/example1');
+  assert.equal(link.platform,'후루츠패밀리');
+  assert.equal(link.url,'https://fruitsfamilyapp.onelink.me/Agm2/example1');
+  for(const input of [
+    'https://fruitsfamilyapp.onelink.me/Agm2/',
+    'https://another.onelink.me/Agm2/example1',
+    'https://fruitsfamilyapp.onelink.me.evil.test/Agm2/example1',
+    'https://fruitsfamilyapp.onelink.me/Other/example1',
+    'https://fruitsfamilyapp.onelink.me/Agm2/example1/extra'
+  ]) assert.throws(()=>context.normalizeLink(input));
+});
 test('native rules have no DOM dependency and match Hangul initials',()=>{
   assert(context.nativeVehicleModels('car','ㅆㄴㅌ',[]).some(v=>v.name==='쏘나타'));
   assert(context.nativeVehicleModels('car','소나타',[]).some(v=>v.name==='쏘나타'));

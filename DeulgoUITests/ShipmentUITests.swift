@@ -85,4 +85,21 @@ final class ShipmentUITests: XCTestCase {
         XCTAssertFalse(app.buttons["운반수단 등록"].exists)
         capture("Request-board-preparation", app: app)
     }
+
+    @MainActor func testIncompleteShareLinkShowsInlineRecovery() {
+        let app = XCUIApplication()
+        app.launch()
+        app.buttons["home.send"].tap()
+        let link = app.descendants(matching: .any)["shipment.link"].firstMatch
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
+        link.tap()
+        link.typeText("https://fruitsfamilyapp.onelink.me/Agm2/")
+        let error = app.staticTexts["shipment.linkError"]
+        XCTAssertTrue(error.waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["정보 다시 불러오기"].exists)
+        app.buttons["shipment.dismissKeyboard"].tap()
+        waitForKeyboardToClose(app)
+        XCTAssertTrue(app.descendants(matching: .any)["내용을 복사해서 입력하기"].firstMatch.exists)
+        capture("Incomplete-share-link-recovery", app: app)
+    }
 }

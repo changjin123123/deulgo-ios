@@ -6,6 +6,7 @@ import Combine
 struct ListingLink {
     let url: URL
     let platform: String
+    var isShortLink: Bool { ["go.bgzt.link", "fruitsfamilyapp.onelink.me"].contains(url.host ?? "") }
     static func parse(_ input: String) throws -> ListingLink {
         let detector = try NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
         let links = detector.matches(in: input, range: NSRange(input.startIndex..., in: input))
@@ -27,6 +28,8 @@ struct ListingLink {
             platform = "헬로마켓"; c.host = "www.hellomarket.com"
         } else if ["fruitsfamily.com", "www.fruitsfamily.com", "production.fruitsfamily.com"].contains(host), matches("^/product/[A-Za-z0-9]+(?:/[^/]+)?/?$") {
             platform = "후루츠패밀리"; c.host = "fruitsfamily.com"
+        } else if host == "fruitsfamilyapp.onelink.me", matches("^/Agm2/[A-Za-z0-9_-]{4,128}/?$") {
+            platform = "후루츠패밀리"
         } else { throw AppInputError("지원하는 중고거래 사이트의 상품 링크를 넣어주세요. 홈·검색·부동산·카페 주소는 사용할 수 없어요.") }
         c.query = nil; c.fragment = nil
         guard let result = c.url else { throw AppInputError("링크를 확인해주세요.") }
@@ -40,8 +43,15 @@ enum ListingMetadataTitle {
         let generic = ["당근", "당근마켓", "번개장터", "중고나라", "헬로마켓", "후루츠패밀리", "fruitsfamily", "상품 상세", "상품상세",
                        "헬로마켓 - 수수료 없는 전국구 중고거래", "상품 상세 | 헬로마켓 - 수수료 없는 전국구 중고거래",
                        "후루츠패밀리 - 빈티지, 세컨핸드 패션 중고거래 앱", "후루츠패밀리 - 빈티지 세컨핸드 패션 중고거래"]
-        let suffix = " | " + platform
-        if title.hasSuffix(suffix) { title = String(title.dropLast(suffix.count)).trimmingCharacters(in: .whitespacesAndNewlines) }
+        let suffixes = platform == "당근" ? [" | 당근 중고거래", " | 당근마켓", " | 당근"] : [" | " + platform]
+        if let suffix = suffixes.first(where: { title.hasSuffix($0) }) {
+            title = String(title.dropLast(suffix.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+            // Only remove a separate price field attached by Daangn's metadata.
+            // Numbers in the seller's title (model, size, quantity, etc.) remain intact.
+            if platform == "당근" {
+                title = title.replacingOccurrences(of: #"\s+\|\s+(?:[0-9][0-9,]*\s*원|나눔)\s*$"#, with: "", options: .regularExpression)
+            }
+        }
         guard title.count > 1, !generic.contains(title.lowercased()),
               title.range(of: "access denied|captcha|로그인|페이지를 찾을|just a moment", options: [.regularExpression, .caseInsensitive]) == nil else {
             throw AppInputError("공개 상품명을 확인하지 못했어요. 원문 내용을 복사하거나 직접 입력해주세요.")
@@ -93,10 +103,11 @@ struct ListingAutofill {
     @Published private(set) var busy = false
     @Published private(set) var error: String?
     private var provider: LPMetadataProvider?
+    private var activeLoad: Task<Void, Never>?
     private var generation = UUID()
 
     func reset() {
-        generation = UUID(); provider?.cancel(); provider = nil
+        generation = UUID(); activeLoad?.cancel(); activeLoad = nil; provider?.cancel(); provider = nil
         preview = nil; error = nil; busy = false
     }
     func usePasted(_ text: String) {
@@ -107,9 +118,30 @@ struct ListingAutofill {
     func load(_ input: String) async {
         reset()
         let token = generation
+        let task = Task { await performLoad(input, token: token) }
+        activeLoad = task
+        await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+        if token == generation { activeLoad = nil }
+    }
+    private func performLoad(_ input: String, token: UUID) async {
         do {
-            let link = try ListingLink.parse(input)
+            let original = try ListingLink.parse(input)
             busy = true
+            let link = try await ListingShortLinkResolver.resolve(original)
+            try Task.checkCancellation()
+            guard token == generation else { return }
+            if link.platform == "번개장터" {
+                let product = try await BunjangPublicProduct.load(link)
+                try Task.checkCancellation()
+                guard token == generation else { return }
+                preview = ListingPreview(title: product.title, description: "", imageData: nil, dimensions: nil)
+                if let url = product.imageURL, let data = try? await ListingHTTP.image(url) {
+                    guard token == generation, !Task.isCancelled else { return }
+                    preview?.imageData = data
+                }
+                if token == generation { busy = false }
+                return
+            }
             let fetcher = LPMetadataProvider()
             fetcher.timeout = 12
             provider = fetcher
@@ -119,7 +151,7 @@ struct ListingAutofill {
                     else { continuation.resume(throwing: error ?? AppInputError("공개 상품 정보를 찾지 못했어요.")) }
                 }
             }
-            guard token == generation else { return }
+            guard token == generation, !Task.isCancelled else { return }
             if let final = metadata.url {
                 let resolved = try ListingLink.parse(final.absoluteString)
                 guard resolved.platform == link.platform else { throw AppInputError("다른 서비스로 이동하는 링크는 사용하지 않아요.") }
@@ -144,7 +176,9 @@ struct ListingAutofill {
             }
         } catch {
             guard token == generation else { return }
-            self.error = (error as? AppInputError)?.message ?? "공개 상품 정보를 불러오지 못했어요. 원문 내용을 복사하거나 물품명을 직접 입력해주세요."
+            if !Task.isCancelled {
+                self.error = (error as? AppInputError)?.message ?? "공개 상품 정보를 불러오지 못했어요. 원문 내용을 복사하거나 물품명을 직접 입력해주세요."
+            }
         }
         if token == generation { busy = false; provider = nil }
     }

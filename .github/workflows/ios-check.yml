@@ -37,8 +37,8 @@ jobs:
           import json
           from pathlib import Path
           summary = json.loads(Path('build/test-summary.json').read_text())
-          if summary.get('passedTests', 0) < 34 or summary.get('failedTests', 0) != 0:
-              raise SystemExit('Expected at least 34 passing XCTest cases and no failures')
+          if summary.get('passedTests', 0) < 43 or summary.get('failedTests', 0) != 0:
+              raise SystemExit('Expected at least 43 passing XCTest cases and no failures')
           PY
       - name: Export UI test screenshots
         if: always()

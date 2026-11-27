@@ -20,6 +20,8 @@ function normalizeLink(input) {
     platform = '헬로마켓'; u.hostname = 'www.hellomarket.com';
   } else if (['fruitsfamily.com', 'www.fruitsfamily.com', 'production.fruitsfamily.com'].includes(host) && /^\/product\/[A-Za-z0-9]+(?:\/[^/]+)?\/?$/.test(path)) {
     platform = '후루츠패밀리'; u.hostname = 'fruitsfamily.com';
+  } else if (host === 'fruitsfamilyapp.onelink.me' && /^\/Agm2\/[A-Za-z0-9_-]{4,128}\/?$/.test(path)) {
+    platform = '후루츠패밀리';
   } else throw new Error('지원하는 중고거래 사이트의 상품 링크를 넣어주세요. 홈·검색·부동산·카페 주소는 사용할 수 없어요.');
   u.hash = ''; u.search = '';
   return { url: u.href, platform };

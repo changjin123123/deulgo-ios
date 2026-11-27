@@ -68,7 +68,7 @@ struct ShipmentEditor: View {
             .appMessage($message)
             .task(id: draft.link) {
                 let input = draft.link
-                guard (try? ListingLink.parse(input)) != nil else { return }
+                guard !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
                 do { try await Task.sleep(for: .milliseconds(400)) } catch { return }
                 guard !Task.isCancelled else { return }
                 await importer.load(input)
@@ -133,7 +133,7 @@ struct ShipmentEditor: View {
             }
             if let error = importer.error {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(error).font(.footnote).foregroundStyle(.secondary)
+                    Text(error).font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("shipment.linkError")
                     if let link = try? ListingLink.parse(draft.link) {
                         Button("정보 다시 불러오기") { Task { await importer.load(draft.link) } }.font(.subheadline)
                         Link("\(link.platform) 원문 열기", destination: link.url).font(.footnote)
