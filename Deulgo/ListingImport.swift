@@ -124,6 +124,7 @@ struct ListingAutofill {
         if token == generation { activeLoad = nil }
     }
     private func performLoad(_ input: String, token: UUID) async {
+        guard token == generation, !Task.isCancelled else { return }
         do {
             let original = try ListingLink.parse(input)
             busy = true
@@ -151,7 +152,8 @@ struct ListingAutofill {
                     else { continuation.resume(throwing: error ?? AppInputError("공개 상품 정보를 찾지 못했어요.")) }
                 }
             }
-            guard token == generation, !Task.isCancelled else { return }
+            guard token == generation else { return }
+            try Task.checkCancellation()
             if let final = metadata.url {
                 let resolved = try ListingLink.parse(final.absoluteString)
                 guard resolved.platform == link.platform else { throw AppInputError("다른 서비스로 이동하는 링크는 사용하지 않아요.") }
