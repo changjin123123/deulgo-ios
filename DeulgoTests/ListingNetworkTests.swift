@@ -45,6 +45,62 @@ final class ListingNetworkTests: XCTestCase {
         }
     }
 
+    func testBunjangIOSAirbridgeRedirectResolvesWithoutLoadingTheLaunchPage() async throws {
+        let original = try ListingLink.parse("https://go.bgzt.link/example1")
+        var calls = 0
+        let product = try await ListingShortLinkResolver.resolve(original) { url, _ in
+            calls += 1
+            XCTAssertEqual(url, original.url)
+            return ListingHTTPResponse(status: 302,
+                location: "https://bunjang.airbridge.io/goto?type=product&val=123456&airbridge_referrer=test&https_deeplink=true&short_id=example1",
+                data: Data())
+        }
+        XCTAssertEqual(calls, 1)
+        XCTAssertEqual(product.url.absoluteString, "https://m.bunjang.co.kr/products/123456")
+        XCTAssertEqual(product.platform, "번개장터")
+        XCTAssertFalse(product.isShortLink)
+    }
+
+    func testBunjangAirbridgeRejectsUnsafeOrAmbiguousDestinations() throws {
+        let root = "https://bunjang.airbridge.io/goto"
+        let invalid = [
+            "http://bunjang.airbridge.io/goto?type=product&val=123456",
+            "https://other.airbridge.io/goto?type=product&val=123456",
+            "https://bunjang.airbridge.io.evil.test/goto?type=product&val=123456",
+            "https://user:pass@bunjang.airbridge.io/goto?type=product&val=123456",
+            "https://bunjang.airbridge.io:443/goto?type=product&val=123456",
+            "https://bunjang.airbridge.io/other?type=product&val=123456",
+            root + "?type=product&val=123456#other", root + "?type=shop&val=123456",
+            root + "?val=123456", root + "?type=product", root + "?type=product&val=",
+            root + "?type=product&val=123456&val=654321",
+            root + "?type=product&val=123456&VAL=654321",
+            root + "?type=product&type=shop&val=123456",
+            root + "?type=product&val=-123456", root + "?type=product&val=123456%0A",
+            root + "?type=product&val=123456%2Fother", root + "?type=product&val=https%3A%2F%2Fevil.test",
+            root + "?type=product&val=" + String(repeating: "1", count: 21)
+        ]
+        for value in invalid {
+            XCTAssertNil(BunjangShareDestination.productLink(from: try XCTUnwrap(URL(string: value))), value)
+        }
+    }
+
+    func testBunjangAirbridgeRequiresBunjangOriginAndHTTPRedirect() async throws {
+        let target = "https://bunjang.airbridge.io/goto?type=product&val=123456"
+        for (input, status) in [("https://go.bgzt.link/example1", 200),
+                                ("https://go.bgzt.link/example1", 403),
+                                ("https://go.bgzt.link/example1", 429),
+                                ("https://fruitsfamilyapp.onelink.me/Agm2/example1", 302)] {
+            var calls = 0
+            do {
+                _ = try await ListingShortLinkResolver.resolve(ListingLink.parse(input)) { _, _ in
+                    calls += 1
+                    return ListingHTTPResponse(status: status, location: target, data: Data())
+                }
+                XCTFail("Accepted an unrelated or denied redirect")
+            } catch { XCTAssertEqual(calls, 1) }
+        }
+    }
+
     func testResolverStopsLoopsAndAccessDenialsWithoutRetrying() async throws {
         let link = try ListingLink.parse("https://fruitsfamilyapp.onelink.me/Agm2/example1")
         for status in [302, 403, 429, 200] {

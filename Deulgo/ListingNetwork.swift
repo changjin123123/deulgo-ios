@@ -79,14 +79,37 @@ enum ListingShortLinkResolver {
             }
             guard [301, 302, 303, 307, 308].contains(response.status),
                   let location = response.location,
-                  let url = URL(string: location, relativeTo: current.url)?.absoluteURL,
-                  let next = try? ListingLink.parse(url.absoluteString), next.platform == link.platform else {
+                  let url = URL(string: location, relativeTo: current.url)?.absoluteURL else {
+                throw AppInputError("공유 링크의 상품 주소를 확인하지 못했어요. 원문에서 상품 페이지 주소를 복사하거나 물품명을 직접 입력해주세요.")
+            }
+            // Bunjang's iOS redirect can point to its Airbridge app-launch page.
+            // Its product ID is already in the URL: validate it and build the
+            // canonical web address without loading/executing the launch page.
+            if link.platform == "번개장터", let product = BunjangShareDestination.productLink(from: url) {
+                return product
+            }
+            guard let next = try? ListingLink.parse(url.absoluteString), next.platform == link.platform else {
                 throw AppInputError("공유 링크의 상품 주소를 확인하지 못했어요. 원문에서 상품 페이지 주소를 복사하거나 물품명을 직접 입력해주세요.")
             }
             current = next
         }
         if !current.isShortLink { return current }
         throw AppInputError("공유 링크의 이동이 너무 많아요. 상품 페이지 주소를 복사해주세요.")
+    }
+}
+
+enum BunjangShareDestination {
+    static func productLink(from url: URL) -> ListingLink? {
+        guard let c = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              c.scheme == "https", c.host?.lowercased() == "bunjang.airbridge.io", c.path == "/goto",
+              c.user == nil, c.password == nil, c.port == nil, c.fragment == nil,
+              let query = c.queryItems else { return nil }
+        let types = query.filter { $0.name.lowercased() == "type" }
+        let values = query.filter { $0.name.lowercased() == "val" }
+        guard types.count == 1, types[0].name == "type", types[0].value == "product",
+              values.count == 1, values[0].name == "val", let id = values[0].value,
+              !id.isEmpty, id.utf8.count <= 20, id.utf8.allSatisfy({ (48...57).contains($0) }) else { return nil }
+        return try? ListingLink.parse("https://m.bunjang.co.kr/products/\(id)")
     }
 }
 
